@@ -1,0 +1,2219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GTNH seed map (RWG2)</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#e9edf1; --panel:#f8fafb; --panel-2:#eef2f5; --ink:#1b2430; --muted:#5d6978; --line:#d3dae1;
+  --accent:#2c7cc0; --accent-ink:#fff; --map-void:#c5ced8;
+  --r:10px; --font:'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#161e28; --panel-2:#1c2632; --ink:#e2e8ee; --muted:#8e9aa9; --line:#293441;
+  --accent:#5aa7e2; --accent-ink:#08121c; --map-void:#1a2330; } }
+:root[data-theme="dark"]{ --bg:#0f151c; --panel:#161e28; --panel-2:#1c2632; --ink:#e2e8ee; --muted:#8e9aa9; --line:#293441;
+  --accent:#5aa7e2; --accent-ink:#08121c; --map-void:#1a2330; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:400 14px/1.45 var(--font);display:grid;
+  grid-template-rows:auto 1fr;grid-template-columns:1fr 340px;grid-template-areas:"top top" "map side";overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono,.pct,#ro-xz{font-variant-numeric:tabular-nums}
+
+header{grid-area:top;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+header h1 span{font-weight:500;color:var(--muted)}
+#seed-form{display:flex;gap:6px;flex:1 1 320px;max-width:560px;align-items:center}
+#seed{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:15px}
+.btn{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);font-weight:600;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#seed-num{font-size:12px;color:var(--muted)}
+
+main{grid-area:map;position:relative;min-height:0}
+#map{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block}
+#map:active{cursor:grabbing}
+.float{position:absolute;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 6px 18px rgba(0,0,0,.18);backdrop-filter:blur(6px)}
+#readout{left:12px;bottom:12px;padding:10px 12px;min-width:220px;max-width:calc(100% - 90px)}
+#ro-xz{font-size:12px;color:var(--muted)}
+#ro-main{display:flex;align-items:center;gap:8px;margin-top:2px}
+#ro-name{font-weight:600;font-size:16px}
+#ro-sub,#ro-dist{font-size:12px;color:var(--muted)}
+#ro-sw{width:14px;height:14px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+#tools{right:12px;top:12px;display:flex;flex-direction:column;overflow:hidden}
+#tools button{width:40px;height:40px;border:0;background:none;font-size:20px;font-weight:600;border-bottom:1px solid var(--line)}
+#tools button:last-child{border-bottom:0}
+#tools button:hover{background:var(--panel-2)}
+#layers{right:12px;bottom:12px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+#layers label{display:flex;gap:6px;align-items:center;cursor:pointer}
+#layers [hidden]{display:none}
+#zoom-lbl{font-size:11px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:2px}
+.seg button{flex:1;border:0;background:none;padding:5px 9px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-checked=true]{background:var(--accent);color:var(--accent-ink)}
+#h-legend{width:190px;margin-top:2px}
+#h-ramp{height:8px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+#h-ticks{position:relative;height:14px;font-size:10.5px;color:var(--muted)}
+#h-ticks span{position:absolute;top:1px;transform:translateX(-50%);white-space:nowrap}
+#h-note{font-size:11.5px;color:var(--muted)}
+#ro-y{font-size:13px;margin-top:2px}
+#busy{position:absolute;left:50%;top:12px;transform:translateX(-50%);padding:4px 10px;font-size:12px;color:var(--muted)}
+#flash{position:absolute;left:50%;top:48px;transform:translateX(-50%);padding:6px 12px;font-size:13px}
+
+aside{grid-area:side;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#sheet-handle{display:none}
+[role=tablist]{display:flex;border-bottom:1px solid var(--line);padding:0 8px}
+[role=tab]{flex:1;border:0;background:none;padding:11px 6px 9px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent}
+[role=tab][aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+[role=tabpanel]{overflow:auto;padding:12px 14px 20px;flex:1;min-height:0}
+h2{font-size:14px;margin:14px 0 6px;font-weight:600}
+h2:first-child{margin-top:0}
+h3{font-size:12px;margin:14px 0 4px;color:var(--muted);font-weight:600}
+.muted{color:var(--muted);font-size:12.5px;margin:6px 0}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+#filter{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.lg-item,.hit{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;padding:5px 6px;border:0;border-radius:6px;background:none}
+.lg-item:hover,.hit:hover{background:var(--panel-2)}
+.lg-item[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
+.lg-item small{color:var(--muted);font-size:11px;margin-left:6px}
+.pct{color:var(--muted);font-size:12px}
+#sel{position:sticky;top:-12px;z-index:1;background:var(--panel);margin:-12px -14px 8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+#sel .row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+#find-out{margin-top:6px}
+#spawn-biome{display:flex;gap:8px;align-items:center;font-weight:600}
+#spawn-list{list-style:none;padding:0;margin:6px 0 0;columns:1}
+#spawn-list li{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;padding:2px 6px;font-size:13px}
+.field{margin:10px 0}
+.field label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.field input[type=range]{width:100%;accent-color:var(--accent)}
+.field select{width:100%;padding:7px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
+#scan-req{font-size:13px}
+#scan-out{list-style:none;padding:0;margin:8px 0 0}
+#scan-out .hit{grid-template-columns:1fr auto}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;margin:10px 0;cursor:pointer}
+details{margin-top:18px;font-size:12.5px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--ink);font-weight:600}
+details p{margin:6px 0}
+
+@media (max-width:760px){
+  body{grid-template-columns:1fr;grid-template-areas:"top" "map"}
+  header{padding:8px 10px;gap:8px}
+  header h1{font-size:15px}
+  #seed-form{flex-basis:100%;flex-wrap:wrap}
+  #seed{flex-basis:100%}
+  #seed-form .btn{flex:1;padding:7px 8px}
+  #seed-num:empty{display:none}
+  aside{position:fixed;left:0;right:0;bottom:0;height:min(62vh,560px);transform:translateY(calc(100% - 46px - env(safe-area-inset-bottom,0px)));
+    transition:transform .24s ease;border-left:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;z-index:5;
+    padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -8px 24px rgba(0,0,0,.2)}
+  body.sheet-open aside{transform:none}
+  #sheet-handle{display:flex;align-items:center;justify-content:center;gap:8px;height:46px;flex:none;border:0;background:none;font-weight:600}
+  #sheet-handle::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--line);position:absolute;top:7px;left:50%;transform:translateX(-50%)}
+  #readout{bottom:56px;left:8px;right:8px;max-width:none;padding:8px 10px}
+  #layers{top:8px;left:8px;right:auto;bottom:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 12px;max-width:calc(100% - 70px)}
+  .seg{flex-basis:100%}
+  #h-legend{width:100%}
+  #tools{top:8px;right:8px}
+}
+@media (prefers-reduced-motion:reduce){aside{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>GTNH seed map <span>RWG2 continents, biomes and terrain</span></h1>
+  <form id="seed-form" autocomplete="off">
+    <input id="seed" aria-label="World seed" placeholder="Seed (number or text)" spellcheck="false">
+    <button class="btn primary" type="submit">Map it</button>
+    <button class="btn" type="button" id="seed-rand" title="Random seed">Random</button>
+    <button class="btn" type="button" id="copy-link" title="Copy a link to this view">Share</button>
+  </form>
+  <span id="seed-num"></span>
+</header>
+<main>
+  <canvas id="map" tabindex="0" aria-label="Biome map. Drag to pan, scroll or pinch to zoom, tap for details."></canvas>
+  <div id="busy" class="float" hidden>Generating…</div>
+  <div id="flash" class="float" hidden></div>
+  <div id="tools" class="float">
+    <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+    <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+    <button id="home" title="Centre on spawn (0, 0)" aria-label="Centre on spawn">⌖</button>
+  </div>
+  <div id="readout" class="float" aria-live="polite">
+    <div id="ro-xz"></div>
+    <div id="ro-main"><span id="ro-sw"></span><span id="ro-name"></span></div>
+    <div id="ro-sub"></div>
+    <div id="ro-y"></div>
+    <div id="ro-dist"></div>
+  </div>
+  <div id="layers" class="float">
+    <div class="seg" role="radiogroup" aria-label="Map layer">
+      <button type="button" role="radio" data-layer="biomes" aria-checked="true">Biomes</button>
+      <button type="button" role="radio" data-layer="relief" aria-checked="false" title="Biome colours with hill shading">Relief</button>
+      <button type="button" role="radio" data-layer="height" aria-checked="false" title="Ground height (Y level) and water depth">Height</button>
+    </div>
+    <div id="h-legend" hidden><div id="h-ramp"></div><div id="h-ticks"></div></div>
+    <span id="h-note" hidden>Zoom in to 1 px = 16 blocks for terrain</span>
+    <label><input type="checkbox" id="t-rivers" checked> Rivers</label>
+    <label id="contour-wrap" hidden><input type="checkbox" id="t-contours"> Contours</label>
+    <label><input type="checkbox" id="t-grid" checked> Grid</label>
+    <span id="zoom-lbl"></span>
+  </div>
+</main>
+<aside>
+  <button id="sheet-handle" aria-label="Show or hide the panel">Biomes and seed hunt</button>
+  <div role="tablist">
+    <button role="tab" id="map-tab-biomes" aria-controls="p-biomes" aria-selected="true">Biomes</button>
+    <button role="tab" id="map-tab-spawn" aria-controls="p-spawn" aria-selected="false">Near spawn</button>
+    <button role="tab" id="map-tab-hunt" aria-controls="p-hunt" aria-selected="false">Seed hunt</button>
+  </div>
+  <section role="tabpanel" id="p-biomes">
+    <div id="sel" hidden>
+      <div class="row"><strong id="sel-n"></strong><button class="btn" id="sel-clear">Clear</button></div>
+      <button class="btn primary" id="find" style="margin-top:8px;width:100%">Find nearest to map centre</button>
+      <div id="find-out"></div>
+    </div>
+    <input id="filter" type="search" placeholder="Filter biomes" aria-label="Filter biomes">
+    <p class="muted">Tap biomes to highlight them. Percentages are each biome's share of the overworld.</p>
+    <div id="legend"></div>
+  </section>
+  <section role="tabpanel" id="p-spawn" hidden>
+    <h2>Spawn biome</h2>
+    <div id="spawn-biome"></div>
+    <p class="muted">The game starts its spawn search at 0, 0 and moves until it finds suitable land. Expect to spawn within a few hundred blocks of the origin, but further if 0, 0 is at sea.</p>
+    <h2>Within 1,500 blocks</h2>
+    <ul id="spawn-list"></ul>
+  </section>
+  <section role="tabpanel" id="p-hunt" hidden>
+    <h2>Find seeds with</h2>
+    <div id="scan-req"></div>
+    <label class="check"><input type="checkbox" id="scan-river"> A river too</label>
+    <div class="field"><label for="scan-rad">Within this many blocks of spawn <span id="scan-rad-v" class="mono">2,000</span></label>
+      <input type="range" id="scan-rad" min="500" max="8000" step="250" value="2000"></div>
+    <div class="field"><label for="scan-n">Seeds to test</label>
+      <select id="scan-n"><option value="500">500</option><option value="2000" selected>2,000</option><option value="10000">10,000</option><option value="50000">50,000</option></select></div>
+    <button class="btn primary" id="scan-go" style="width:100%">Find seeds</button>
+    <p id="scan-stat" class="muted"></p>
+    <ul id="scan-out"></ul>
+    <p class="muted">Matches are sorted by the furthest required biome. Tap one to load it.</p>
+  </section>
+  <details style="padding:0 14px 14px">
+    <summary>About this map</summary>
+    <p>A port of the overworld generator from Realistic World Gen 2 (version 2.0.6) as GT New Horizons 2.9.0 ships it: the default RWG2_CONTINENTS world type with RWG2's default settings, Biomes O' Plenty and Thaumcraft biomes. It covers continents, oceans, islands, volcanoes, climate zones, biome placement, rivers and terrain height.</p>
+    <p>The code was ported from the mod's source by two separate transcriptions that agree bit for bit on biomes, rivers and heights, including volcanoes and coastlines. Neither has been compared with a running game yet.</p>
+    <p>The map shows the biome RWG2 places at each point. The F3 screen can differ near biome edges, because the game picks each column's displayed biome from the blended neighbours and swaps in river biomes.</p>
+    <p>Terrain heights are the top block of the ground before caves, lava caves, trees and other features. At 1 px = 4 blocks or closer they are exact; between 8 and 16 blocks per pixel the map uses a faster estimate that can be off near biome borders. Sea level is Y 62. Worlds switched to OpenSimplex noise with RWG's noise command generate differently.</p>
+  </details>
+</aside>
+<script>
+// ===== Realistic World Gen 2 (rwg2, tag 2.0.6) — overworld biome placement + terrain height, bit-exact JS port =====
+// Target: world type RWG2_CONTINENTS (ChunkManagerRealistic / ChunkGeneratorRealistic with continental = true),
+// default ConfigRWG (no rwg2.cfg), mods: Biomes O' Plenty + Thaumcraft (no ExtrabiomesXL / ChromatiCraft).
+// Noise implementation: a new world reads NoiseImplementation.UNKNOWN from RwgWorldSavedData → NoiseSelector returns a
+// NoiseGeneratorWrapper with useOpenSimplex = false, i.e. plain rwg2.util.PerlinNoise (same as RWG1).
+// Conventions: every Java float operation is wrapped in F() (Math.fround), left to right; double stays double;
+// long arithmetic uses BigInt (hashes) or exact 32-bit tricks (CellNoise). Works as a browser script and as a Node module.
+//
+// API (drop-in for the RWG1 rwg.js + height.js pair):
+//   REG.list[i] = { key, name, f3, mod, river, color, group, id (RealisticBiomeBase.biomeID), terrain, ... } — every biome
+//     getBiomeDataAt can return on the continental overworld, ordered by biomeID. REG.all = every registered biome (by id).
+//   FREQ[i] ≈ % share of REG.list[i];  SEA_LEVEL_Y = 62 (top water block; stone fills y <= (int)h, water (int)h < y <= 62).
+//   new RWGWorld(seedBigInt): biomeAt(x,z) → REG.list index (ChunkManagerRealistic.getBiomeDataAt, continental);
+//     riverStrength(x,z) (getRiverStrength incl. volcano flattening); isRiver(x,z,rs?) (river-biome swap test);
+//     continentAt(x,z) (getContinentValue); heightChunk(cx,cz,out?,step=1,start=0) → Float32Array(256), [i*16+j] =
+//     getNewNoise height of column (cx*16+i, cz*16+j); heightApprox(x,z); heightLattice(BiomeLattice, x, z);
+//     perlin / cell / climateAt(x,z) / noiseAt(x,z) (getNoiseAt) / volcanoChecked / lavaCaveChecked / genBiome.
+//   new BiomeLattice(world, xa, za, xb, zb).fill(deadline) → .done, .a (REG.list idx), .g (biomeID used by heights).
+
+const F = Math.fround;
+const MASK48 = (1n << 48n) - 1n;
+const M64 = (1n << 64n) - 1n;
+
+// java.util.Random, exact (48-bit LCG split into two 24-bit halves)
+class JRandom {
+  constructor(seedBig) {
+    const s = (BigInt.asUintN(64, seedBig) ^ 0x5DEECE66Dn) & MASK48;
+    this.hi = Number(s >> 24n); this.lo = Number(s & 0xFFFFFFn);
+  }
+  next(bits) {
+    const MLO = 15525485, MHI = 1502; // 0x5DEECE66D = 1502*2^24 + 15525485
+    const l = this.lo * MLO + 11;
+    const lo = l % 16777216, carry = Math.floor(l / 16777216);
+    const hi = (this.hi * MLO + this.lo * MHI + carry) % 16777216;
+    this.hi = hi; this.lo = lo;
+    const sh = 48 - bits; // sh in [16,24] for our uses
+    const v = hi * Math.pow(2, 24 - sh) + Math.floor(lo / Math.pow(2, sh));
+    return v | 0;
+  }
+  nextLong() { return BigInt.asIntN(64, (BigInt(this.next(32)) << 32n) + BigInt(this.next(32))); }
+  nextDouble() {
+    return ((this.next(26) >>> 0) * 134217728 + (this.next(27) >>> 0)) / 9007199254740992;
+  }
+}
+
+// rwg2.util.PerlinNoise (identical to RWG1; only the Perlin tables are kept, improvedNoise RNG draws still consumed)
+class PerlinNoise {
+  constructor(seedBig) {
+    const r = new JRandom(seedBig);
+    for (let i = 0; i < 255; i++) r.nextLong();          // p_imp shuffle draws
+    const B = 4096, MAX = 2147483647;
+    const p = new Int32Array(B + B + 2), g1 = new Float32Array(B + B + 2), g2 = new Float32Array((B + B + 2) * 2);
+    const gv = () => F(F(((r.nextDouble() * MAX) % (B + B)) - B) / B);
+    let i;
+    for (i = 0; i < B; i++) {
+      p[i] = i;
+      g1[i] = gv();
+      g2[i * 2] = gv(); g2[i * 2 + 1] = gv();
+      { const a = g2[i * 2], b = g2[i * 2 + 1];
+        const s = F(1 / Math.sqrt(F(F(a * a) + F(b * b))));
+        g2[i * 2] = F(a * s); g2[i * 2 + 1] = F(b * s); }
+      r.nextDouble(); r.nextDouble(); r.nextDouble();      // g3 draws
+    }
+    while (--i > 0) {
+      const k = p[i]; const j = Math.trunc((r.nextDouble() * MAX) % B);
+      p[i] = p[j]; p[j] = k;
+    }
+    for (i = 0; i < B + 2; i++) { p[B + i] = p[i]; g1[B + i] = g1[i]; g2[(B + i) * 2] = g2[i * 2]; g2[(B + i) * 2 + 1] = g2[i * 2 + 1]; }
+    this.p = p; this.g1 = g1; this.g2 = g2;
+  }
+  static s(t) { return F(F(t * t) * F(3 - F(2 * t))); }
+  static lerp(t, a, b) { return F(a + F(t * F(b - a))); }
+  noise1(x) {
+    let t = Math.abs(F(x + 4096));
+    const ti = Math.trunc(t), bx0 = ti & 255, bx1 = (bx0 + 1) & 255;
+    const rx0 = F(t - ti), rx1 = F(rx0 - 1);
+    const sx = PerlinNoise.s(rx0), p = this.p, g1 = this.g1;
+    return PerlinNoise.lerp(sx, F(rx0 * g1[p[bx0]]), F(rx1 * g1[p[bx1]]));
+  }
+  noise2(x, y) {
+    const p = this.p, g2 = this.g2;
+    let t = Math.abs(F(x + 4096)); let ti = Math.trunc(t);
+    const bx0 = ti & 255, bx1 = (bx0 + 1) & 255, rx0 = F(t - ti), rx1 = F(rx0 - 1);
+    t = Math.abs(F(y + 4096)); ti = Math.trunc(t);
+    const by0 = ti & 255, by1 = (by0 + 1) & 255, ry0 = F(t - ti), ry1 = F(ry0 - 1);
+    const i = p[bx0], j = p[bx1];
+    const b00 = p[i + by0], b10 = p[j + by0], b01 = p[i + by1], b11 = p[j + by1];
+    const sx = PerlinNoise.s(rx0), sy = PerlinNoise.s(ry0), L = PerlinNoise.lerp;
+    let u = F(F(rx0 * g2[b00 * 2]) + F(ry0 * g2[b00 * 2 + 1]));
+    let v = F(F(rx1 * g2[b10 * 2]) + F(ry0 * g2[b10 * 2 + 1]));
+    const a = L(sx, u, v);
+    u = F(F(rx0 * g2[b01 * 2]) + F(ry1 * g2[b01 * 2 + 1]));
+    v = F(F(rx1 * g2[b11 * 2]) + F(ry1 * g2[b11 * 2 + 1]));
+    const b = L(sx, u, v);
+    return L(sy, a, b);
+  }
+}
+
+// rwg2.util.CellNoise (distanceMethod 0). Only the low 31 bits of 1013*seed matter to the hash.
+class CellNoise {
+  constructor(seedBig) {
+    const off = new JRandom(seedBig).nextLong();
+    this.k0 = Number(BigInt.asUintN(32, 1013n * seedBig)) | 0;
+    this.k1 = Number(BigInt.asUintN(32, 1013n * off)) | 0;
+  }
+  static vn(x, z, k) { // valueNoise2D
+    let n = ((Math.imul(1619, x) + Math.imul(6971, z)) | 0) + k;
+    n = n & 0x7fffffff;
+    n = (n >> 13) ^ n;
+    const v = (Math.imul(n, (Math.imul(Math.imul(n, n), 60493) + 19990303) | 0) + 1376312589) & 0x7fffffff;
+    return 1.0 - v / 1073741824.0;
+  }
+  // noise(x, z, 1.0) with useDistance = false → float value of the nearest feature point's cell
+  value(x, z) {
+    const xi = x > 0 ? Math.trunc(x) : Math.trunc(x) - 1;
+    const zi = z > 0 ? Math.trunc(z) : Math.trunc(z) - 1;
+    let min = 32000000.0, cx = 0, cz = 0;
+    const k0 = this.k0, k1 = this.k1;
+    for (let zc = zi - 2; zc <= zi + 2; zc++) for (let xc = xi - 2; xc <= xi + 2; xc++) {
+      const xp = xc + CellNoise.vn(xc, zc, k0), zp = zc + CellNoise.vn(xc, zc, k1);
+      const dx = xp - x, dz = zp - z, d = dx * dx + dz * dz;
+      if (d < min) { min = d; cx = xp; cz = zp; }
+    }
+    return F(CellNoise.vn(Math.floor(cx) | 0, Math.floor(cz) | 0, k0));
+  }
+  // noise(x, z, 1.0) with useDistance = true (the generator's/manager's `cell`)
+  dist(x, z) {
+    const xi = x > 0 ? Math.trunc(x) : Math.trunc(x) - 1;
+    const zi = z > 0 ? Math.trunc(z) : Math.trunc(z) - 1;
+    let min = 32000000.0, cx = 0, cz = 0;
+    const k0 = this.k0, k1 = this.k1;
+    for (let zc = zi - 2; zc <= zi + 2; zc++) for (let xc = xi - 2; xc <= xi + 2; xc++) {
+      const xp = xc + CellNoise.vn(xc, zc, k0), zp = zc + CellNoise.vn(xc, zc, k1);
+      const dx = xp - x, dz = zp - z, d = dx * dx + dz * dz;
+      if (d < min) { min = d; cx = xp; cz = zp; }
+    }
+    const dx = cx - x, dz = cz - z;
+    return F(Math.sqrt(dx * dx + dz * dz) / 1.4142135623730950488);
+  }
+  // border(x, z, width, depth) (squared-euclidean branch, distanceMethod 0)
+  border(x, z, width, depth) {
+    const xi = x > 0 ? Math.trunc(x) : Math.trunc(x) - 1;
+    const zi = z > 0 ? Math.trunc(z) : Math.trunc(z) - 1;
+    let dC = 32000000.0, dN = 32000000.0;
+    const k0 = this.k0, k1 = this.k1;
+    for (let zc = zi - 2; zc <= zi + 2; zc++) for (let xc = xi - 2; xc <= xi + 2; xc++) {
+      const xp = xc + CellNoise.vn(xc, zc, k0), zp = zc + CellNoise.vn(xc, zc, k1);
+      const dx = xp - x, dz = zp - z, d = dx * dx + dz * dz;
+      if (d < dC) { dN = dC; dC = d; } else if (d < dN) dN = d;
+    }
+    dC = Math.sqrt(dC) / 1.4142135623730950488;
+    dN = Math.sqrt(dN) / 1.4142135623730950488;
+    const c = dN - dC;
+    return c < width ? F(F(F(c / width) - 1) * depth) : 0;
+  }
+  // sampleTwo2D(x, z, 1.0, out): [nearest distance, nearest value, second distance, second value] (doubles)
+  sampleTwo2D(x, z, out) {
+    const xi = x > 0 ? Math.trunc(x) : Math.trunc(x) - 1;
+    const zi = z > 0 ? Math.trunc(z) : Math.trunc(z) - 1;
+    let d1 = Infinity, d2 = Infinity, v1 = 0, v2 = 0;
+    const k0 = this.k0, k1 = this.k1;
+    for (let zc = zi - 2; zc <= zi + 2; zc++) for (let xc = xi - 2; xc <= xi + 2; xc++) {
+      const xp = xc + CellNoise.vn(xc, zc, k0), zp = zc + CellNoise.vn(xc, zc, k1);
+      const dx = xp - x, dz = zp - z, d = dx * dx + dz * dz;
+      if (d < d1) { d2 = d1; v2 = v1; d1 = d; v1 = CellNoise.vn(Math.floor(xp) | 0, Math.floor(zp) | 0, k0); }
+      else if (d < d2) { d2 = d; v2 = CellNoise.vn(Math.floor(xp) | 0, Math.floor(zp) | 0, k0); }
+    }
+    out = out || new Float64Array(4);
+    out[0] = Math.sqrt(d1); out[1] = v1; out[2] = Math.sqrt(d2); out[3] = v2;
+    return out;
+  }
+  // junction(x, z, width, depth) (only used for mountain-chain river caves, i.e. blocks, not the height float)
+  junction(x, z, width, depth) {
+    const xi = x > 0 ? Math.trunc(x) : Math.trunc(x) - 1;
+    const zi = z > 0 ? Math.trunc(z) : Math.trunc(z) - 1;
+    let a = Infinity, b = Infinity, c = Infinity;
+    const k0 = this.k0, k1 = this.k1;
+    for (let zc = zi - 2; zc <= zi + 2; zc++) for (let xc = xi - 2; xc <= xi + 2; xc++) {
+      const xp = xc + CellNoise.vn(xc, zc, k0), zp = zc + CellNoise.vn(xc, zc, k1);
+      const dx = xp - x, dz = zp - z, d = Math.sqrt(dx * dx + dz * dz) / 1.4142135623730950488;
+      if (d < a) { c = b; b = a; a = d; } else if (d < b) { c = b; b = d; } else if (d < c) c = d;
+    }
+    const diff = c - a;
+    return diff < width ? F(F(F(diff / width) - 1) * depth) : 0;
+  }
+}
+
+// ---- 64-bit splitmix-style hash shared by PoissonPointNoise / IslandPointNoise / ContinentLandmarkNoise / ContinentalNoise
+function hash64(seedU, cellX, cellZ, salt) { // returns unsigned 64-bit BigInt
+  let v = seedU;
+  v ^= BigInt.asUintN(64, BigInt(cellX) * 341873128712n);
+  v ^= BigInt.asUintN(64, BigInt(cellZ) * 132897987541n);
+  v ^= BigInt.asUintN(64, BigInt(salt) * 42317861n);
+  v ^= v >> 33n;
+  v = (v * 0xff51afd7ed558ccdn) & M64;
+  v ^= v >> 33n;
+  v = (v * 0xc4ceb9fe1a85ec53n) & M64;
+  return v ^ (v >> 33n);
+}
+const unit64 = v => Number(v >> 11n) * 2 ** -53;  // (value >>> 11) * 0x1.0p-53
+const jfloor = v => { const i = Math.trunc(v); return v < i ? i - 1 : i; }; // the classes' private floor(double)
+const ckey = (x, z) => x * 67108864 + z;                                   // unique Map key for |z| < 2^25
+const cellKeyLong = (x, z) => BigInt.asIntN(64, (BigInt(z) << 32n) | BigInt(x >>> 0)); // (long)x & 0xffffffffL | (long)z << 32
+
+// rwg2.util.PoissonPointNoise — deterministic fixed-round dart throwing (all caches are pure memoisation)
+class PoissonPointNoise {
+  constructor(seedBig, minimumDistance, rounds) {
+    this.seed = BigInt.asUintN(64, seedBig);
+    this.minD2 = minimumDistance * minimumDistance;
+    this.cellSize = minimumDistance / 1.4142135623730951;
+    this.nb = Math.ceil(minimumDistance / this.cellSize) + 1;
+    this.rounds = rounds;
+    this.cells = new Map(); this.regions = new Map();
+  }
+  cand(cx, cz, r) {
+    const k = ckey(cx, cz); let cell = this.cells.get(k);
+    if (cell === undefined) { if (this.cells.size >= 400000) this.cells.clear(); cell = new Array(this.rounds); this.cells.set(k, cell); }
+    let c = cell[r];
+    if (c === undefined) {
+      const s = r * 3, cs = this.cellSize;
+      const x = (cx + unit64(hash64(this.seed, cx, cz, s))) * cs;
+      const z = (cz + unit64(hash64(this.seed, cx, cz, s + 1))) * cs;
+      c = { cellX: cx, cellZ: cz, round: r, x, z, pri: hash64(this.seed, cx, cz, s + 2), acc: 0 };
+      cell[r] = c;
+    }
+    return c;
+  }
+  within(a, b) { const dx = a.x - b.x, dz = a.z - b.z; return dx * dx + dz * dz < this.minD2; }
+  static lower(l, r) { return l.pri < r.pri || (l.pri === r.pri && cellKeyLong(l.cellX, l.cellZ) < cellKeyLong(r.cellX, r.cellZ)); }
+  clearOfEarlier(c) {
+    const nb = this.nb;
+    for (let round = 0; round < c.round; round++)
+      for (let oz = -nb; oz <= nb; oz++) for (let ox = -nb; ox <= nb; ox++) {
+        const e = this.cand(c.cellX + ox, c.cellZ + oz, round);
+        if (this.within(c, e) && this.accepted(e)) return false;
+      }
+    return true;
+  }
+  accepted(c) {
+    if (c.acc !== 0) return c.acc > 0;
+    if (!this.clearOfEarlier(c)) { c.acc = -1; return false; }
+    const nb = this.nb;
+    for (let oz = -nb; oz <= nb; oz++) for (let ox = -nb; ox <= nb; ox++) {
+      if (ox === 0 && oz === 0) continue;
+      const n = this.cand(c.cellX + ox, c.cellZ + oz, c.round);
+      if (this.within(c, n) && PoissonPointNoise.lower(n, c) && this.clearOfEarlier(n)) { c.acc = -1; return false; }
+    }
+    c.acc = 1; return true;
+  }
+  isAccepted(cx, cz, r) { return this.accepted(this.cand(cx, cz, r)); }
+  region(qx, qz) {
+    const key = ckey(qx, qz); const cached = this.regions.get(key);
+    if (cached !== undefined) return cached;
+    const acc = []; let ub = Infinity; const cs = this.cellSize;
+    for (let ring = 0; ; ring++) {
+      for (let oz = -ring; oz <= ring; oz++) for (let ox = -ring; ox <= ring; ox++) {
+        if (ring !== 0 && Math.abs(ox) !== ring && Math.abs(oz) !== ring) continue;
+        const cx = qx + ox, cz = qz + oz;
+        for (let r = 0; r < this.rounds; r++) {
+          const c = this.cand(cx, cz, r);
+          if (this.accepted(c)) {
+            acc.push(c);
+            const mnX = qx * cs, mxX = mnX + cs, mnZ = qz * cs, mxZ = mnZ + cs;
+            const dx = Math.max(Math.abs(c.x - mnX), Math.abs(c.x - mxX)), dz = Math.max(Math.abs(c.z - mnZ), Math.abs(c.z - mxZ));
+            ub = Math.min(ub, dx * dx + dz * dz);
+          }
+        }
+      }
+      const ud = ring * cs;
+      if (acc.length > 0 && ud * ud >= ub) {
+        if (this.regions.size >= 200000) this.regions.clear();
+        this.regions.set(key, acc); return acc;
+      }
+    }
+  }
+  // sample(x, z, out): returns { d: distance, c: nearest accepted candidate } (out[1..5] = c.cellX, c.cellZ, c.x, c.z, c.round)
+  sample(x, z) {
+    const cs = this.cellSize, reg = this.region(jfloor(x / cs), jfloor(z / cs));
+    let best = null, bs = Infinity;
+    for (let i = 0; i < reg.length; i++) {
+      const c = reg[i], dx = c.x - x, dz = c.z - z, d2 = dx * dx + dz * dz;
+      if (d2 < bs) { bs = d2; best = c; }
+    }
+    return { d: Math.sqrt(bs), c: best };
+  }
+}
+
+// rwg2.util.IslandPointNoise
+class IslandPointNoise {
+  constructor(seedBig, continents, maxContinentWidth, w1, w2, minOcean, chance) {
+    this.seed = BigInt.asUintN(64, seedBig); this.cont = continents; this.maxCW = maxContinentWidth;
+    this.minW = Math.min(w1, w2); this.maxW = Math.max(w1, w2); this.range = this.maxW - this.minW;
+    this.minOcean = minOcean; this.chance = chance;
+    this.search = Math.ceil(this.maxW / continents.cellSize) + 1;
+    this.nb = Math.ceil((this.maxW * 2 + minOcean) / continents.cellSize) + 1;
+    this.cands = new Map(); this.regions = new Map();
+  }
+  cand(cx, cz, r) {
+    const k = ckey(cx, cz); let cell = this.cands.get(k);
+    if (cell === undefined) { if (this.cands.size >= 400000) this.cands.clear(); cell = new Array(this.cont.rounds); this.cands.set(k, cell); }
+    let c = cell[r];
+    if (c === undefined) {
+      const p = this.cont.cand(cx, cz, r);
+      const width = this.minW + unit64(hash64(this.seed, cx, cz, r * 4)) * this.range;
+      c = { cellX: cx, cellZ: cz, round: r, x: p.x, z: p.z, width, pri: hash64(this.seed, cx, cz, r * 4 + 1), hole: 0, ident: 0 };
+      cell[r] = c;
+    }
+    return c;
+  }
+  isHole(c) {
+    if (c.hole !== 0) return c.hole > 0;
+    if (this.cont.isAccepted(c.cellX, c.cellZ, c.round)) { c.hole = -1; return false; }
+    const s = this.cont.sample(c.x, c.z);
+    c.hole = s.d >= this.maxCW + c.width + this.minOcean ? 1 : -1;
+    return c.hole > 0;
+  }
+  overlaps(a, b) { const dx = a.x - b.x, dz = a.z - b.z, m = a.width + b.width + this.minOcean; return dx * dx + dz * dz < m * m; }
+  identified(c) {
+    if (c.ident !== 0) return c.ident > 0;
+    if (!this.isHole(c)) { c.ident = -1; return false; }
+    const nb = this.nb, R = this.cont.rounds;
+    for (let oz = -nb; oz <= nb; oz++) for (let ox = -nb; ox <= nb; ox++) for (let r = 0; r < R; r++) {
+      const n = this.cand(c.cellX + ox, c.cellZ + oz, r);
+      if (n === c || !this.isHole(n) || !this.overlaps(c, n)) continue;
+      if (n.pri < c.pri) { c.ident = -1; return false; }
+    }
+    c.ident = 1; return true;
+  }
+  placed(c) { return this.identified(c) && unit64(hash64(this.seed, c.cellX, c.cellZ, c.round * 4 + 3)) < this.chance; }
+  region(qx, qz) {
+    const key = ckey(qx, qz); const cached = this.regions.get(key);
+    if (cached !== undefined) return cached;
+    if (this.regions.size >= 32768) this.regions.clear();
+    const out = [], s = this.search, R = this.cont.rounds;
+    for (let oz = -s; oz <= s; oz++) for (let ox = -s; ox <= s; ox++) for (let r = 0; r < R; r++) {
+      const c = this.cand(qx + ox, qz + oz, r);
+      if (this.placed(c)) out.push(c);
+    }
+    this.regions.set(key, out); return out;
+  }
+  // → [value, width, seedX, seedZ]
+  sample(x, z) {
+    const cs = this.cont.cellSize, reg = this.region(jfloor(x / cs), jfloor(z / cs));
+    let best = -Number.MAX_VALUE, bw = 0, bx = 0, bz = 0;
+    for (let i = 0; i < reg.length; i++) {
+      const c = reg[i], dx = x - c.x, dz = z - c.z, d2 = dx * dx + dz * dz;
+      if (best !== -Number.MAX_VALUE) { const ir = c.width - best; if (ir <= 0 || d2 >= ir * ir) continue; }
+      const v = c.width - Math.sqrt(d2);
+      if (v > best) { best = v; bw = c.width; bx = c.x; bz = c.z; }
+    }
+    return [best, bw, bx, bz];
+  }
+}
+
+// rwg2.util.ContinentLandmarkNoise
+class ContinentLandmarkNoise {
+  constructor(continentSeed, selectionSeed, continents, minCW, maxCW, voronoiRadius, avgPerContinent, searchRadius) {
+    this.cseed = BigInt.asUintN(64, continentSeed); this.sseed = BigInt.asUintN(64, selectionSeed);
+    this.cont = continents; this.minCW = minCW; this.cwRange = maxCW - minCW; this.vr = voronoiRadius;
+    const aw = (minCW + maxCW) * 0.5;
+    const lf = Math.max(0.01, Math.min(1, aw * aw / (voronoiRadius * voronoiRadius)));
+    this.chance = Math.min(1, avgPerContinent / (continents.rounds * lf));
+    this.search = Math.ceil(searchRadius / continents.cellSize) + 1;
+    this.regions = new Map();
+  }
+  region(qx, qz) {
+    const key = ckey(qx, qz); const cached = this.regions.get(key);
+    if (cached !== undefined) return cached;
+    if (this.regions.size >= 32768) this.regions.clear();
+    const out = [], s = this.search, R = this.cont.rounds;
+    for (let oz = -s; oz <= s; oz++) for (let ox = -s; ox <= s; ox++) {
+      const cx = qx + ox, cz = qz + oz;
+      for (let r = 0; r < R; r++) {
+        if (unit64(hash64(this.sseed, cx, cz, r * 2 + 1)) >= this.chance) continue;
+        const p = this.cont.cand(cx, cz, r);
+        const nc = this.cont.sample(p.x, p.z);
+        const width = this.minCW + unit64(hash64(this.cseed, nc.c.cellX, nc.c.cellZ, 0)) * this.cwRange;
+        if (Math.min(this.vr, width) - nc.d < 0) continue;
+        out.push({ x: p.x, z: p.z, cellX: cx, cellZ: cz, round: r });
+      }
+    }
+    this.regions.set(key, out); return out;
+  }
+  // → nearest selected landmark { d, c } (c null and d = Infinity when none)
+  sample(x, z) {
+    const cs = this.cont.cellSize, reg = this.region(jfloor(x / cs), jfloor(z / cs));
+    let best = null, bs = Infinity;
+    for (let i = 0; i < reg.length; i++) {
+      const c = reg[i], dx = x - c.x, dz = z - c.z, d2 = dx * dx + dz * dz;
+      if (d2 < bs) { best = c; bs = d2; }
+    }
+    return { d: Math.sqrt(bs), c: best };
+  }
+  static candidateKey(seedU, cx, cz, round) { // as signed long; MIN_VALUE remapped to MIN_VALUE + 1
+    const v = BigInt.asIntN(64, hash64(seedU, cx, cz, round * 2 + 2));
+    return v === -(1n << 63n) ? v + 1n : v;
+  }
+}
+
+// rwg2.util.ContinentalNoise (continent distance field + islands + volcano / lava-cave landmarks)
+const CFG = { // ConfigRWG defaults (floats widened to double exactly as Java does)
+  minimumContinentWidth: F(2700), maximumContinentWidth: F(2700), averageOceanWidth: F(100), minimumOceanWidth: F(50),
+  maximumOceanFraction: F(0.4), minimumIslandWidth: F(300), maximumIslandWidth: F(600), islandPlacementChance: F(0.30),
+  largeIslandVolcanoChance: F(0.15), averageLandmarksPerTypeAndContinent: F(0.25),
+};
+const VOLCANO_ISLAND_RADIUS = 160, VOLCANO_RADIUS = 130, LAVA_CAVE_INFLUENCE_RADIUS = 320;
+const SALT_VOLCANO = 0x082EFA98EC4E6C89n, SALT_LAVA = 0x6A09E667F3BCC909n;
+
+class ContinentalNoise {
+  constructor(seedBig) {
+    this.seedU = BigInt.asUintN(64, seedBig);
+    const C = CFG;
+    this.minCW = Math.min(C.minimumContinentWidth, C.maximumContinentWidth);
+    const maxCW = Math.max(C.minimumContinentWidth, C.maximumContinentWidth);
+    this.minIW = Math.min(C.minimumIslandWidth, C.maximumIslandWidth);
+    this.maxIW = Math.max(C.minimumIslandWidth, C.maximumIslandWidth);
+    this.iwRange = this.maxIW - this.minIW;
+    this.cwRange = maxCW - this.minCW;
+    const avgCW = (this.minCW + maxCW) * 0.5;
+    this.vr = avgCW + C.averageOceanWidth;
+    this.dilation = ContinentalNoise.dilation(this.minCW, maxCW, this.vr, C.minimumOceanWidth, C.maximumOceanFraction);
+    this.warpX = new PerlinNoise(BigInt.asIntN(64, seedBig ^ 0x243F6A8885A308D3n));
+    this.warpY = new PerlinNoise(BigInt.asIntN(64, seedBig ^ 0x13198A2E03707344n));
+    this.points = new PoissonPointNoise(seedBig, maxCW * 2 + C.minimumOceanWidth, 8);
+    this.islands = new IslandPointNoise(seedBig ^ 0xA4093822299F31D0n, this.points, maxCW, C.minimumIslandWidth,
+      C.maximumIslandWidth, C.minimumOceanWidth, C.islandPlacementChance);
+    this.volcanoes = new ContinentLandmarkNoise(seedBig, seedBig ^ SALT_VOLCANO, this.points, this.minCW, maxCW, this.vr,
+      C.averageLandmarksPerTypeAndContinent, VOLCANO_ISLAND_RADIUS);
+    this.lavaCaves = new ContinentLandmarkNoise(seedBig, seedBig ^ SALT_LAVA, this.points, this.minCW, maxCW, this.vr,
+      C.averageLandmarksPerTypeAndContinent, LAVA_CAVE_INFLUENCE_RADIUS);
+    this.volcSeedU = BigInt.asUintN(64, seedBig ^ SALT_VOLCANO); this.lavaSeedU = BigInt.asUintN(64, seedBig ^ SALT_LAVA);
+    const o = this.points.sample(0, 0);
+    this.offX = o.c.x; this.offY = o.c.z;
+    this.centerCache = new Map(); this.last = null;
+  }
+  static dilation(minW, maxW, rLim, minOcean, oceanLimit) {
+    if (oceanLimit >= 1) return 0;
+    const lo = Math.min(rLim, minW), up = Math.min(rLim, maxW);
+    const mean = (lo + up) * 0.5;
+    const meanSq = (lo * lo + lo * up + up * up) / 3;
+    const spacing = maxW * 2 + minOcean;
+    const req = 1 - oceanLimit;
+    const corr = 0.75 + 0.46 * req;
+    const desired = Math.min(1, req * corr);
+    const dms = desired * spacing * spacing / 1.82;
+    if (dms <= meanSq) return 0;
+    return Math.sqrt(mean * mean + dms - meanSq) - mean;
+  }
+  random01(cx, cy, salt) { return unit64(hash64(this.seedU, cx, cy, salt)); }
+  // getIslandCenter / getLandmarkCenter (inverse of the coastline warp, 12 fixed-point iterations) → [cx, cz]
+  center(seedX, seedZ) {
+    const k = seedX + "," + seedZ; let c = this.centerCache.get(k);
+    if (c !== undefined) return c;
+    let cx = seedX - this.offX, cz = seedZ - this.offY;
+    const wX = this.warpX, wY = this.warpY;
+    for (let it = 0; it < 12; it++) {
+      const nX = cx / 3600, nZ = cz / 3600;
+      const fx = F(nX), fz = F(nZ), fx2 = F(nX * 2), fz2 = F(nZ * 2);
+      const wx = cx + wX.noise2(fx, fz) * 1800 + wX.noise2(fx2, fz2) * 1800 + this.offX;
+      const wz = cz + wY.noise2(fx, fz) * 1800 + wY.noise2(fx2, fz2) * 1800 + this.offY;
+      cx -= (wx - seedX) * 0.5;
+      cz -= (wz - seedZ) * 0.5;
+    }
+    c = [cx, cz];
+    if (this.centerCache.size > 20000) this.centerCache.clear();
+    this.centerCache.set(k, c); return c;
+  }
+  tier(width) { const f = this.iwRange === 0 ? 0 : (width - this.minIW) / this.iwRange; return f < 0.5 ? 0 : 1; }
+  // sampleLandform(x, y): a fresh immutable object per coordinate (the Java ThreadLocal caches only the last one)
+  sample(x, y) {
+    const L0 = this.last; if (L0 !== null && L0.x === x && L0.y === y) return L0;
+    const nX = x / 3600, nY = y / 3600, fx = F(nX), fy = F(nY), fx2 = F(nX * 2), fy2 = F(nY * 2);
+    const wx = x + this.warpX.noise2(fx, fy) * 1800 + this.warpX.noise2(fx2, fy2) * 1800;
+    const wy = y + this.warpY.noise2(fx, fy) * 1800 + this.warpY.noise2(fx2, fy2) * 1800;
+    const px = wx + this.offX, py = wy + this.offY;
+    const ps = this.points.sample(px, py);
+    const width = this.minCW + this.random01(ps.c.cellX, ps.c.cellZ, 0) * this.cwRange;
+    const continent = Math.min(this.vr, width) + this.dilation - ps.d;
+    const r = { x, y, value: 0, island: false, islandWidth: 0, islandSeedX: 0, islandSeedZ: 0, islandLocalX: 0, islandLocalZ: 0,
+      volcano: false, volcanoIsland: false, volcanoKey: null, volcanoCenterX: 0, volcanoCenterZ: 0,
+      lavaCave: false, lavaCaveKey: null, lavaCaveCenterX: 0, lavaCaveCenterZ: 0, lavaCaveLocalX: 0, lavaCaveLocalZ: 0 };
+    if (continent >= 0 && CFG.averageLandmarksPerTypeAndContinent > 0) {
+      const v = this.volcanoes.sample(px, py);
+      if (Number.isFinite(v.d)) {
+        const c = this.center(v.c.x, v.c.z), lx = x - c[0], lz = y - c[1];
+        if (lx * lx + lz * lz <= VOLCANO_ISLAND_RADIUS * VOLCANO_ISLAND_RADIUS) {
+          r.volcano = true;
+          r.volcanoKey = "v" + ContinentLandmarkNoise.candidateKey(this.volcSeedU, v.c.cellX, v.c.cellZ, v.c.round);
+          r.volcanoCenterX = c[0]; r.volcanoCenterZ = c[1];
+          r.islandLocalX = F(lx); r.islandLocalZ = F(lz);
+        }
+      }
+      const l = this.lavaCaves.sample(px, py);
+      if (Number.isFinite(l.d)) {
+        const c = this.center(l.c.x, l.c.z), lx = x - c[0], lz = y - c[1];
+        if (lx * lx + lz * lz <= LAVA_CAVE_INFLUENCE_RADIUS * LAVA_CAVE_INFLUENCE_RADIUS) {
+          r.lavaCave = true;
+          r.lavaCaveKey = "l" + ContinentLandmarkNoise.candidateKey(this.lavaSeedU, l.c.cellX, l.c.cellZ, l.c.round);
+          r.lavaCaveCenterX = c[0]; r.lavaCaveCenterZ = c[1];
+          r.lavaCaveLocalX = F(lx); r.lavaCaveLocalZ = F(lz);
+        }
+      }
+    }
+    if (continent >= this.maxIW) { r.value = F(continent); this.last = r; return r; }
+    const is = this.islands.sample(px, py), island = is[0];
+    r.value = F(Math.max(continent, island));
+    r.island = island >= 0 && island > continent;
+    if (r.island) {
+      r.islandWidth = is[1];
+      r.islandSeedX = Math.round(is[2]) | 0; r.islandSeedZ = Math.round(is[3]) | 0;
+      const c = this.center(r.islandSeedX, r.islandSeedZ);
+      r.islandLocalX = F(x - c[0]); r.islandLocalZ = F(y - c[1]);
+      r.volcano = this.tier(r.islandWidth) === 1 && this.random01(r.islandSeedX, r.islandSeedZ, 17) < CFG.largeIslandVolcanoChance;
+      if (r.volcano) {
+        r.volcanoIsland = true;
+        r.volcanoKey = "i" + r.islandSeedX + "," + r.islandSeedZ;
+        r.volcanoCenterX = c[0]; r.volcanoCenterZ = c[1];
+      }
+    }
+    this.last = r; return r;
+  }
+  getValue(x, y) { return this.sample(x, y).value; }
+  islandSizeTier(L) { return L.island ? this.tier(L.islandWidth) : -1; }
+  // getVolcanoCoordinates(x, y, radius) → [localX, localZ] floats or null (Java: Long.MIN_VALUE)
+  static volcanoLocal(L, radius) {
+    if (!L.volcano || F(F(L.islandLocalX * L.islandLocalX) + F(L.islandLocalZ * L.islandLocalZ)) > radius * radius) return null;
+    return [L.islandLocalX, L.islandLocalZ];
+  }
+}
+
+// rwg2.terrain.* (18 of 19 classes unchanged from RWG1; TerrainHighland gained flatDetailStrength; TerrainSmallIsland new)
+// Signature: (perlin, cell, x, y, border, river, ocean) → float height.  `cell.dist` = CellNoise with useDistance = true.
+const TERRAIN = (() => {
+  const c = {}; for (const v of [0.8, 0.7, 2.5, 0.3, 0.30, 1.5, 0.2, 0.4, 0.15, 0.07, 0.6, 0.015, 0.95, 0.09, 1.3, 7.4, 0.38, 0.25, 4.5, 0.1]) c[v] = F(v);
+  // x / w as Java float division of an int coordinate
+  const d = (x, w) => F(F(x) / w);
+  return {
+    hilly(width, strength, lakeDepth, lakeWidth = 260, height = 68) {
+      width = F(width); strength = F(strength); lakeDepth = F(lakeDepth); lakeWidth = F(lakeWidth); height = F(height);
+      return (p, cell, x, y, border, river) => {
+        let h = F(p.noise2(d(x, 20), d(y, 20)) * 2);
+        h = F(h + F(p.noise2(d(x, 7), d(y, 7)) * c[0.8]));
+        let m = F(F(p.noise2(d(x, width), d(y, width)) * strength) * river);
+        m = F(m * F(m / 35));
+        m = m > 70 ? F(70 + F(F(m - 70) / 2.5)) : m;
+        let st = F(m * c[0.7]); st = st > 20 ? 20 : st;
+        const cc = F(cell.dist(d(x, 30), d(y, 30)) * F(5 + st));
+        let sm = F(F(p.noise2(d(x, 30), d(y, 30)) * 8) + p.noise2(d(x, 8), d(y, 8)));
+        const q = F(F(m + 10) / 20); sm = F(sm * (q > 2.5 ? c[2.5] : q));
+        m = F(m + sm); m = F(m + cc);
+        let l = F(p.noise2(d(x, lakeWidth), d(y, lakeWidth)) * lakeDepth);
+        l = F(l * F(l / 25)); l = l < -8 ? -8 : l;
+        return F(F(F(height + h) + m) - l);
+      };
+    },
+    mountainRiver() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, 300), d(y, 300)) * 135) * river);
+        h = F(h * F(h / 32)); h = h > 150 ? 150 : h;
+        if (h < 10) h = F(h + F(F(p.noise2(d(x, 14), d(y, 14)) * F(10 - h)) * c[0.2]));
+        if (h > 10) {
+          const q = F(F(h - 10) / 2), dd = q > 8 ? 8 : q;
+          h = F(h + F(p.noise2(d(x, 35), d(y, 35)) * dd));
+          h = F(h + F(F(p.noise2(d(x, 60), d(y, 60)) * dd) * 0.5));
+          if (h > 35) { const q2 = F(F(h - 35) / c[1.5]), d2 = q2 > 30 ? 30 : q2; h = F(h + F(cell.dist(x / 25, y / 25) * d2)); }
+        }
+        if (h > 2) {
+          const q = F(F(h - 2) / 2), dd = q > 4 ? 4 : q;
+          h = F(h + F(p.noise2(d(x, 28), d(y, 28)) * dd));
+          h = F(h + F(p.noise2(d(x, 18), d(y, 18)) * F(dd / 2)));
+          h = F(h + F(p.noise2(d(x, 8), d(y, 8)) * F(dd / 2)));
+        }
+        return F(h + 67);
+      };
+    },
+    mountain() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, 300), d(y, 300)) * 135) * river);
+        h = F(h * F(h / 32)); h = h > 150 ? 150 : h;
+        if (h > 10) {
+          const q = F(F(h - 10) / 2), dd = q > 8 ? 8 : q;
+          h = F(h + F(p.noise2(d(x, 35), d(y, 35)) * dd));
+          h = F(h + F(F(p.noise2(d(x, 60), d(y, 60)) * dd) * 0.5));
+          if (h > 35) { const q2 = F(F(h - 35) / c[1.5]), d2 = q2 > 30 ? 30 : q2; h = F(h + F(cell.dist(x / 25, y / 25) * d2)); }
+        }
+        h = F(h + F(p.noise2(d(x, 28), d(y, 28)) * 4));
+        h = F(h + F(p.noise2(d(x, 18), d(y, 18)) * 2));
+        h = F(h + F(p.noise2(d(x, 8), d(y, 8)) * 2));
+        return F(h + 67);
+      };
+    },
+    mountainSpikes() {
+      return (p, cell, x, y, border, river) => {
+        const b = F(12 + F(p.noise2(d(x, 300), d(y, 300)) * 6));
+        let h = F(F(cell.dist(x / 200, y / 200) * b) * river);
+        h = F(h * F(h * c[1.5])); h = h > 155 ? 155 : h;
+        if (h > 2) {
+          const q = F(F(h - 2) / 2), dd = q > 8 ? 8 : q;
+          h = F(h + F(p.noise2(d(x, 30), d(y, 30)) * dd));
+          h = F(h + F(F(p.noise2(d(x, 50), d(y, 50)) * dd) * 0.5));
+          if (h > 35) { const q2 = F(F(h - 35) / c[1.5]), d2 = q2 > 30 ? 30 : q2; h = F(h + F(cell.dist(x / 25, y / 25) * d2)); }
+        }
+        h = F(h + F(p.noise2(d(x, 18), d(y, 18)) * 3));
+        h = F(h + F(p.noise2(d(x, 8), d(y, 8)) * 2));
+        return F(F(45 + h) + F(b * 2));
+      };
+    },
+    swampMountain(height, width) {
+      height = F(height); width = F(width);
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, width), d(y, width)) * height) * river);
+        h = F(h * F(h / 32)); h = h > 150 ? 150 : h;
+        if (h < 14) h = F(h + F(F(p.noise2(d(x, 25), d(y, 25)) * F(14 - h)) * c[0.8]));
+        if (h < 6) h = F(F(F(6 - F(F(6 - h) * c[0.07])) + p.noise2(d(x, 20), d(y, 20))) + p.noise2(d(x, 5), d(y, 5)));
+        if (h > 10) {
+          const q = F(F(h - 10) / 2), dd = q > 8 ? 8 : q;
+          h = F(h + F(p.noise2(d(x, 35), d(y, 35)) * dd));
+          h = F(h + F(F(p.noise2(d(x, 60), d(y, 60)) * dd) * 0.5));
+          if (h > 35) { const q2 = F(F(h - 35) / c[1.5]), d2 = q2 > 30 ? 30 : q2; h = F(h + F(cell.dist(x / 25, y / 25) * d2)); }
+        }
+        if (h > 2) {
+          const q = F(F(h - 2) / 2), dd = q > 4 ? 4 : q;
+          h = F(h + F(p.noise2(d(x, 28), d(y, 28)) * dd));
+          h = F(h + F(p.noise2(d(x, 18), d(y, 18)) * F(dd / 2)));
+          h = F(h + F(p.noise2(d(x, 8), d(y, 8)) * F(dd / 2)));
+        }
+        return F(h + 56);
+      };
+    },
+    swampRiver() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, 180), d(y, 180)) * 40) * river);
+        h = F(h * F(h / 35));
+        if (h < 1) h = 1;
+        if (h < 4) h = F(h + F(F(p.noise2(d(x, 50), d(y, 50)) + p.noise2(d(x, 15), d(y, 15))) * F(4 - h)));
+        return F(60 + h);
+      };
+    },
+    marsh() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(p.noise2(d(x, 130), d(y, 130)) * 30);
+        h = F(h + F(p.noise2(d(x, 12), d(y, 12)) * 2));
+        h = F(h + F(p.noise2(d(x, 18), d(y, 18)) * 4));
+        h = h < 4 ? 0 : F(h - 4);
+        if (h === 0) h = F(h + F(p.noise2(d(x, 20), d(y, 20)) + p.noise2(d(x, 5), d(y, 5))));
+        return F(62 + h);
+      };
+    },
+    highland(start, height, base, width, flat = 1) { // RWG2 TerrainHighland (flatDetailStrength, default 1f)
+      start = F(start); height = F(height); base = F(base); width = F(width); flat = F(flat);
+      const oneMinusFlat = F(1 - flat);
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, width), d(y, width)) * height) * river);
+        h = h < start ? F(start + F(F(h - start) / c[4.5])) : h;
+        if (h > 0) {
+          const st = F(h * c[1.5]) > 15 ? 15 : F(h * c[1.5]);
+          h = F(h + F(cell.dist(x / 70, y / 70) * st));
+        }
+        let hd = F(F(h - start) / 15); hd = Math.max(0, Math.min(1, hd));
+        const ds = F(flat + F(oneMinusFlat * hd));
+        h = F(h + F(F(p.noise2(d(x, 20), d(y, 20)) * 5) * ds));
+        h = F(h + F(F(p.noise2(d(x, 12), d(y, 12)) * 3) * ds));
+        h = F(h + F(F(p.noise2(d(x, 5), d(y, 5)) * c[1.5]) * ds));
+        return F(base + h);
+      };
+    },
+    grasslandFlats() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(p.noise2(d(x, 100), d(y, 100)) * 7);
+        h = F(h + F(p.noise2(d(x, 20), d(y, 20)) * 2));
+        let m = F(F(p.noise2(d(x, 180), d(y, 180)) * 70) * river);
+        m = F(m * F(m / 40));
+        let sm = F(p.noise2(d(x, 30), d(y, 30)) * 8);
+        const q = F(m / 20); sm = F(sm * (q > 3.75 ? 3.75 : q));
+        m = F(m + sm);
+        let l = F(p.noise2(d(x, 260), d(y, 260)) * 38);
+        l = F(l * F(l / 25)); l = l < -8 ? -8 : l;
+        return F(F(F(68 + h) + m) - l);
+      };
+    },
+    grasslandHills(hH, hW, vH, vW, lH, lW, bH) {
+      [hH, hW, vH, vW, lH, lW, bH] = [hH, hW, vH, vW, lH, lW, bH].map(F);
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, vW), d(y, vW)) * vH) * river);
+        h = F(h + F(p.noise2(d(x, 20), d(y, 20)) * 2));
+        let m = F(F(p.noise2(d(x, hW), d(y, hW)) * hH) * river);
+        m = F(m * F(m / 40));
+        let sm = F(p.noise2(d(x, 30), d(y, 30)) * 8);
+        let q = F(m / 20); sm = F(sm * (q > 3.75 ? 3.75 : q));
+        m = F(m + sm);
+        let cm = F(cell.dist(x / 25, y / 25) * 12);
+        q = F(m / 20); cm = F(cm * (q > 3.75 ? 3.75 : q));
+        m = F(m + cm);
+        let l = F(p.noise2(d(x, lW), d(y, lW)) * lH);
+        l = F(l * F(l / 25)); l = l < 8 ? 8 : l;
+        h = F(h + F(p.noise2(d(x, 12), d(y, 12)) * 3));
+        h = F(h + F(p.noise2(d(x, 5), d(y, 5)) * c[1.5]));
+        return F(F(F(bH + h) + m) - l);
+      };
+    },
+    grasslandMountains() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(p.noise2(d(x, 100), d(y, 100)) * 7);
+        h = F(h + F(p.noise2(d(x, 20), d(y, 20)) * 2));
+        let m = F(F(p.noise2(d(x, 230), d(y, 230)) * 120) * river);
+        m = F(m * F(m / 35));
+        m = m > 70 ? F(70 + F(F(m - 70) / 2.5)) : m;
+        const cc = F(cell.dist(d(x, 30), d(y, 30)) * F(m * c[0.30]));
+        let sm = F(F(p.noise2(d(x, 30), d(y, 30)) * 8) + p.noise2(d(x, 8), d(y, 8)));
+        const q = F(m / 20); sm = F(sm * (q > 2.5 ? c[2.5] : q));
+        m = F(m + sm); m = F(m + cc);
+        let l = F(p.noise2(d(x, 260), d(y, 260)) * 38);
+        l = F(l * F(l / 25)); l = l < -8 ? -8 : l;
+        return F(F(F(68 + h) + m) - l);
+      };
+    },
+    duneValley(valley) {
+      valley = F(valley);
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(F(p.noise2(d(x, valley), d(y, valley)) + c[0.25]) * 65) * river);
+        h = h < 1 ? 1 : h;
+        const r = F(F(cell.dist(x / 50, y / 50) * h) * 2);
+        h = F(h + r);
+        h = F(h + F(p.noise2(d(x, 40), d(y, 40)) * 8));
+        h = F(h + F(p.noise2(d(x, 14), d(y, 14)) * 2));
+        return F(70 + h);
+      };
+    },
+    dunes() {
+      return (p, cell, x, y, border, river) => {
+        let st = F(F(p.noise2(d(x, 160), d(y, 160)) + c[0.38]) * 35);
+        st = st < c[0.2] ? c[0.2] : st;
+        let h = F(F(p.noise2(d(x, 60), d(y, 60)) * st) * 2);
+        h = h > 0 ? -h : h;
+        h = F(h + st); h = F(h * F(h / 50)); h = F(h + st);
+        if (h < 10) {
+          let dd = F(F(h - 10) / 2); dd = dd > 4 ? 4 : dd;
+          h = F(h + F(cell.dist(x / 25, y / 25) * dd));
+          h = F(h + F(p.noise2(d(x, 30), d(y, 30)) * dd));
+          h = F(h + F(F(p.noise2(d(x, 14), d(y, 14)) * dd) * 0.5));
+        }
+        return F(70 + F(h * river));
+      };
+    },
+    polar() {
+      return (p, cell, x, y, border, river) => {
+        let st = F(F(F(p.noise2(d(x, 160), d(y, 160)) + c[0.38]) * 35) * river);
+        st = st < c[0.2] ? c[0.2] : st;
+        let h = F(F(p.noise2(d(x, 60), d(y, 60)) * st) * 2);
+        h = h > 0 ? -h : h;
+        h = F(h + st); h = F(h * F(h / 50)); h = F(h + st);
+        return F(70 + h);
+      };
+    },
+    flatLakes() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, 300), d(y, 300)) * 40) * river);
+        h = h > 3 ? 3 : h;
+        h = F(h + F(F(p.noise2(d(x, 50), d(y, 50)) * F(12 - h)) * c[0.4]));
+        h = F(h + F(F(p.noise2(d(x, 15), d(y, 15)) * F(12 - h)) * c[0.15]));
+        return F(62 + h);
+      };
+    },
+    smallSupport() {
+      return (p, cell, x, y, border, river) => {
+        let h = F(p.noise2(d(x, 100), d(y, 100)) * 8);
+        h = F(h + F(p.noise2(d(x, 30), d(y, 30)) * 4));
+        h = F(h + F(p.noise2(d(x, 15), d(y, 15)) * 2));
+        h = F(h + p.noise2(d(x, 7), d(y, 7)));
+        return F(F(70 + F(20 * river)) + h);
+      };
+    },
+    canyon(smallRiver, heightStrength, cWidth, cHeight, cStrength, base) {
+      const H = [5.0, 0.5, 12.5, 0.5, 18.0, 0.5], strength = F(heightStrength); base = F(base);
+      const thr = [0, 2, 4].map(i => F(c[0.6] + F(H[i] * c[0.015])));
+      return (p, cell, x, y, border, river) => {
+        river = F(river * c[1.3]); river = river > 1 ? 1 : river;
+        let r = F(p.noise2(d(x, 100), d(y, 100)) * 50);
+        r = r < -c[7.4] ? -c[7.4] : r > c[7.4] ? c[7.4] : r;
+        let b = F(F(17 + r) * river);
+        const hn = F(p.noise2(d(x, 12), d(y, 12)) * 0.5);
+        let sb = 0;
+        if (b > 0) { sb = b; sb = sb < 0 ? 0 : sb > 7 ? 7 : sb; sb = F(hn * sb); }
+        b = F(b + sb);
+        let cTotal = 0;
+        for (let i = 0; i < 6; i += 2) {
+          let cTemp = 0;
+          if (b > H[i] && border > F(thr[i / 2] + F(hn * c[0.2]))) {
+            cTemp = b > H[i] + H[i + 1] ? H[i + 1] : F(b - H[i]);
+            cTemp = F(cTemp * strength);
+          }
+          cTotal = F(cTotal + cTemp);
+        }
+        let bn = 0;
+        if (smallRiver) {
+          if (b < 5) { bn = F(5 - b); for (let i = 0; i < 3; i++) bn = F(bn * F(bn / c[4.5])); }
+        } else if (b < 5) {
+          bn = F(F(F(F(p.noise2(d(x, 7), d(y, 7)) * c[1.3]) + F(p.noise2(d(x, 15), d(y, 15)) * 2)) * F(5 - b)) * c[0.2]);
+        }
+        b = F(b + F(cTotal - bn));
+        return F(base + b);
+      };
+    },
+    mesa() {
+      return (p, cell, x, y, border, river) => {
+        let b = F(F(p.noise2(d(x, 130), d(y, 130)) * 50) * river);
+        b = F(b * F(b / 40));
+        const hn = p.noise2(d(x, 12), d(y, 12));
+        let sb = 0;
+        if (b > 2) { sb = F(F(b - 2) / 2); sb = sb < 0 ? 0 : sb > 5.5 ? 5.5 : sb; sb = F(hn * sb); }
+        b = F(b + sb);
+        b = b < c[0.1] ? c[0.1] : b;
+        let c1 = 0;
+        if (b > 1) { c1 = b > 5.5 ? 4.5 : F(b - 1); c1 = F(c1 * 3); }
+        let c2 = 0;
+        if (b > 5.5 && border > F(c[0.95] + F(hn * c[0.09]))) { c2 = b > 6 ? 0.5 : F(b - 5.5); c2 = F(c2 * 35); }
+        let bn = 0;
+        if (b < 7) {
+          const bnh = F(5 - b);
+          bn = F(bn + F(p.noise2(d(x, 70), d(y, 70)) * F(bnh * c[0.4])));
+          bn = F(bn + F(p.noise2(d(x, 20), d(y, 20)) * F(bnh * c[0.3])));
+        }
+        let w = F(p.noise2(d(x, 80), d(y, 80)) * 25);
+        w = F(w * F(w / 25));
+        b = F(b + F(F(F(c1 + c2) + bn) - w));
+        return F(74 + b);
+      };
+    },
+  };
+})();
+
+// ---- RWG2-only terrain / rNoise bodies (signature as TERRAIN: (p, cell, x, y, border, river, ocean))
+const TERRAIN2 = (() => {
+  const d = (x, w) => F(F(x) / w);
+  const k = {}; for (const v of [0.5, 0.15, 0.07, 1.4, 1.5, 0.1, 1.3, 1.9, 4.5]) k[v] = F(v);
+  return {
+    smallIsland() { // TerrainSmallIsland (mushroom island shelf)
+      return (p, cell, x, y, border, river) => {
+        let h = F(F(p.noise2(d(x, 200), d(y, 200)) * 120) * river);
+        h = h < 6 ? F(6 + F(F(h - 6) / k[4.5])) : h;
+        if (h > 0) {
+          const st = F(h * 1.5) > 15 ? 15 : F(h * 1.5);
+          h = F(h + F(cell.dist(x / 70, y / 70) * st));
+        }
+        h = F(h + F(p.noise2(d(x, 20), d(y, 20)) * 5));
+        h = F(h + F(p.noise2(d(x, 12), d(y, 12)) * 3));
+        h = F(h + F(p.noise2(d(x, 5), d(y, 5)) * 1.5));
+        return Math.max(58, F(58 + h));
+      };
+    },
+    coastIce() { // RealisticBiomeCoastIce.rNoise
+      return (p, cell, x, y, border, river, ocean) => {
+        river = river > k[0.5] ? 1 : F(river * 2);
+        const start = F(F(F(p.noise2(d(x, 90), d(y, 90)) * 1) + F(p.noise2(d(x, 40), d(y, 40)) * k[0.15]))
+          + F(p.noise2(d(x, 9), d(y, 9)) * k[0.07]));
+        let h = 0, c = 0;
+        const os = F(ocean + start);
+        if (os > k[1.4]) {
+          c = os > k[1.5] ? k[0.1] : F(os - k[1.4]);
+          c = F(c * F(250 + F(p.noise2(d(x, 50), d(y, 50)) * 25)));
+        }
+        if (ocean < k[1.3]) {
+          h = F(h + p.noise2(d(x, 12), d(y, 12)));
+          h = F(h + F(p.noise2(d(x, 20), d(y, 20)) * 2));
+        }
+        return F(F(55 + h) + F(c * river));
+      };
+    },
+    coastDunes() { // RealisticBiomeCoastDunes.rNoise
+      return (p, cell, x, y, border, river, ocean) => {
+        let h = ocean < k[0.5] ? F(ocean * 18) : 9;
+        if (ocean < k[1.9]) {
+          h = F(h + F(p.noise2(d(x, 12), d(y, 12)) * 1));
+          h = F(h + F(p.noise2(d(x, 23), d(y, 23)) * 2));
+        }
+        if (ocean > 1) {
+          const o1 = F(ocean - 1);
+          h = F(h + F(F(p.noise2(d(x, 15), d(y, 15)) * o1) * 8));
+          h = F(h + F(F(p.noise2(d(x, 25), d(y, 25)) * o1) * 13));
+          h = F(h + F(o1 * 9));
+        }
+        return F(55 + h);
+      };
+    },
+    ocean(shallow) { // RealisticBiomeOcean.rNoise (also RealisticBiomeBOPOcean, shallow)
+      const base = shallow ? 52 : 34;
+      return (p, cell, x, y) => F(F(base + F(p.noise2(d(x, 220), d(y, 220)) * 4)) + F(p.noise2(d(x, 55), d(y, 55)) * 1.5));
+    },
+    volcano() { // RealisticBiomeIslandVolcano.rNoise: rNoiseAt(perlin, x, y, 61f) with the world coordinates as "local"
+      return (p, cell, x, y) => volcanoNoiseAt(p, F(x), F(y), 61, 61);
+    },
+  };
+})();
+
+const smooth01 = v => { v = Math.max(0, Math.min(1, v)); return F(F(v * v) * F(3 - F(2 * v))); };
+// RealisticBiomeIslandVolcano.rNoiseAt(perlin, localX, localZ, baseHeight, underlyingHeight)
+function volcanoRim(base) { return Math.max(40, Math.min(60, F(44 + F(F(base - 63) * F(0.2))))); }
+function volcanoNoiseAt(p, lx, lz, base, under) {
+  let dist = F(Math.sqrt(lx * lx + lz * lz));
+  dist = F(dist + F(p.noise2(F(lx / 18), F(lz / 18)) * 3));
+  const foot = smooth01(F(F(dist - 44) / 86));
+  const lb = F(base + F(F(under - base) * foot));
+  const ss = F(1 - foot);
+  const rim = volcanoRim(base);
+  let h;
+  if (dist < 26) h = F(F(lb + 4) + F(p.noise2(F(lx / 9), F(lz / 9)) * 1.5));
+  else if (dist < 44) { const r = F(F(dist - 26) / 18); h = F(F(lb + 4) + F(r * F(rim - 4))); }
+  else { const slope = Math.max(0, F(1 - F(F(dist - 44) / 86))); h = F(lb + F(slope * rim)); }
+  const vh = F(h + F(F(p.noise2(F(lx / 24), F(lz / 24)) * 2) * ss));
+  const ui = smooth01(F(F(dist - F(37.5)) / F(32.5)));
+  return F(vh + F(Math.max(0, F(under - vh)) * ui));
+}
+const volcanoCanGenerateAtHeight = base => F(F(base + volcanoRim(base)) + 2) <= 250;
+// map.LavaCaveLandmark.surfaceHeight
+function lavaWarpX(p, x, z) {
+  const anchor = smooth01(F(F(Math.sqrt(F(F(x * x) + F(z * z)))) / 48));
+  return F(x + F(F(F(p.noise2(F(F(x + 1300) / 175), F(F(z - 700) / 175)) * 34) + F(p.noise2(F(F(x - 170) / 58), F(F(z + 290) / 58)) * 14)) * anchor));
+}
+function lavaWarpZ(p, x, z) {
+  const anchor = smooth01(F(F(Math.sqrt(F(F(x * x) + F(z * z)))) / 48));
+  return F(z + F(F(F(p.noise2(F(F(x - 2100) / 175), F(F(z + 1900) / 175)) * 34) + F(p.noise2(F(F(x + 370) / 58), F(F(z - 510) / 58)) * 14)) * anchor));
+}
+function lavaSurfaceHeight(p, lx, lz, under) {
+  const x = lavaWarpX(p, lx, lz), z = lavaWarpZ(p, lx, lz);
+  const dist = F(Math.sqrt(F(F(x * x) + F(z * z))));
+  if (dist >= 65 || under < 63) return under;
+  const cone = F(smooth01(F(1 - F(dist / 65))) * 20);
+  const vent = smooth01(F(1 - F(dist / 18)));
+  const rim = F(Math.max(0, F(1 - F(Math.abs(F(dist - 16)) / 5))) * F(2.5));
+  return F(F(under + F(cone * F(1 - vent))) + rim);
+}
+
+// ======================================================================================================
+// Biome registry, in RealisticBiomeBase.biomeID (registration) order
+// ======================================================================================================
+const RIVER = { Ice: "Ice River", Cold: "Cold River", Temperate: "Temperate River", Hot: "Hot River", Wet: "Wet River", Oasis: "River Oasis" };
+const COLORS = {
+  polar:"#f3f7fa", snowHills:"#dbe6ee", snowRivers:"#c9d9e5", snowLakes:"#b7cfe0", redwoodSnow:"#9fb9bf",
+  tundraHills:"#8e9a78", tundraPlains:"#a9ae8a", taigaHills:"#3e6a50", taigaPlains:"#5a8464", redwood:"#7a4a33",
+  darkRedwood:"#4b2e23", darkRedwoodPlains:"#6b4b3a", woodhills:"#4f8a3c", woodmountains:"#6e8f68",
+  duneValleyForest:"#b8a458", savanna:"#c4b45a", savannaForest:"#9ea247", savannaDunes:"#dac37a", stoneMountains:"#8f8a80",
+  stoneMountainsCactus:"#a69c7b", hotForest:"#6c9a2c", hotRedwood:"#8f5a2a", canyonForest:"#a2683b", mesaPlains:"#c7784a",
+  desert:"#eddc9f", desertMountains:"#d3bf84", duneValley:"#e4cc88", oasis:"#3fb79f", redDesertMountains:"#b25a3a",
+  redDesertOasis:"#d07c52", canyon:"#b86b45", mesa:"#a8492f", hotPlainsCanyonIsland:"#c98a5a",
+  rainForestHigh:"#2e7d32", jungleHills:"#3f8f2f", jungleCanyon:"#6f8f3a", redwoodJungle:"#5b6b2a",
+  coastIce:"#e6f2f8", coastDunes:"#eadfb0",
+  "support.mushroomIsland":"#9a6aa8", "support.icePlainsSpikes":"#d5ecf7", "support.sunflowerPlains":"#d8d050",
+  "support.oceanShallowSnow":"#8fb3d3", "support.oceanShallowCold":"#5b8fcc", "support.oceanShallowHot":"#4aa6d6",
+  "support.oceanShallowWet":"#3d95b8", "support.oceanDeepSnow":"#2e4e7c", "support.oceanDeepCold":"#1f3c78",
+  "support.oceanDeepHot":"#1f5c98", "support.oceanDeepWet":"#1b4e74", "support.oceanShallowKelp":"#2f7f7a",
+  "support.oceanShallowCoral":"#45c0cf", "support.volcanoIsland":"#3b2626",
+  "bop.bambooForest":"#86c43f", "bop.bayou":"#4f6b3a", "bop.bog":"#5e5a3a", "bop.borealForest":"#2f5a48",
+  "bop.brushland":"#b0a162", "bop.brushland#2":"#cab878", "bop.canyon":"#c4845a", "bop.chaparral":"#93a35a",
+  "bop.cherryBlossomGrove":"#f0a6c6", "bop.coniferousForest":"#2d5d3e", "bop.snowyConiferousForest":"#a1bab5",
+  "bop.deadForest":"#7d705c", "bop.deadSwamp":"#5a5347", "bop.deciduousForest":"#5d8f3a", "bop.eucalyptusForest":"#6fae5a",
+  "bop.fen":"#707f4a", "bop.flowerField":"#e07ab0", "bop.frostForest":"#c3e2f0", "bop.fungiForest":"#b3566b",
+  "bop.fungiForest#2":"#a0663a", "bop.fungiForest#3":"#8f5a3a", "bop.garden":"#7fd06a", "bop.grove":"#6aa84f",
+  "bop.heathland":"#9a8f52", "bop.highland":"#80a06a", "bop.jadeCliffs":"#3f9f7a", "bop.jadeCliffs#2":"#4fae86",
+  "bop.landOfLakesMarsh":"#5a8a6a", "bop.lavenderFields":"#a78bd6", "bop.lushDesert":"#cbc27a", "bop.lushSwamp":"#3f7a4a",
+  "bop.mapleWoods":"#c2603a", "bop.mangrove":"#4a7a4a", "bop.meadow":"#92d072", "bop.garden#2":"#6fb85a",
+  "bop.mountain":"#8b8b8b", "bop.ominousWoods":"#3a3a5a", "bop.outback":"#d18a4f", "bop.prairie":"#b9c96a",
+  "bop.rainforest":"#2f8f4a", "bop.quagmire":"#5a5a3a", "bop.redwoodForest":"#8b4f36", "bop.sacredSprings":"#4fd0d0",
+  "bop.seasonalForest":"#c9913a", "bop.shield":"#4f6a5a", "bop.shrubland":"#a0b16a", "bop.sludgepit":"#4b4a2a",
+  "bop.temperateRainforest":"#2f7a5a", "bop.tropicalRainforest":"#1f8a3a", "bop.tropics":"#3fc08a", "bop.tropics#2":"#4fd09a",
+  "bop.tropics#3":"#5fcf8a", "bop.tropics#4":"#36b07a", "bop.oasis":"#4fc0a0", "bop.tundra":"#b1a990", "bop.wetland":"#4a6f5a",
+  "bop.woodland":"#5f7f3a", "tc.magicalForest":"#7b4fd6", "tc.magicalForest#2":"#8b5fe0", "tc.taint":"#b33fa3",
+  "mountainChain.bop.borealForest":"#5f6e68", "mountainChain.bop.tundra":"#8a857a", "mountainChain.bop.jadeCliffs":"#5f7a70",
+  "mountainChain.bop.temperateRainforest":"#5a6e64", "mountainChain.bop.chaparral":"#7f8064",
+  "mountainChain.bop.rainforest":"#58705c", "mountainChain.bop.tropicalRainforest":"#4f6e55",
+};
+const RIVER_COLORS = { "Ice River":"#a8d6f2", "Cold River":"#5e98cc", "Temperate River":"#3a7fc2", "Hot River":"#3a9db2", "Wet River":"#2d7a8c", "River Oasis":"#34c2b0" };
+
+// BoP display names (biomeName as registered in BOPBiomes) and temperatures < 0.15 (only those matter: coast choice)
+const BOP_NAMES = { landOfLakesMarsh: "Land of Lakes Marsh", snowyConiferousForest: "Snowy Coniferous Forest" };
+const camel = s => s.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
+const BOP_COLD = new Set(["snowyConiferousForest", "frostForest"]); // BiomeGenConiferousForestSnow 0.0F, BiomeGenFrostForest 0.0F
+
+const REG = (() => {
+  const T = TERRAIN, T2 = TERRAIN2;
+  const all = []; // index = biomeID
+  const add = (key, name, f3, river, mod, terrain, extra = {}) => {
+    const b = Object.assign({ key, name, f3, river: RIVER[river] || river, mod, terrain, id: all.length, cold: false, mc: false,
+      ocean: false, volcano: false, placeable: true }, extra);
+    all.push(b); return b;
+  };
+  const GH = () => T.grasslandHills(90, 180, 13, 100, 38, 260, 71), HL = () => T.highland(0, 140, 68, 200);
+  const CANYON = (base) => T.canyon(true, 35, 160, 60, 40, base);
+  const S = {}; // static fields
+  // RealisticBiomeBase static initialiser (ids 0..47)
+  const nope = { placeable: false };
+  S.test = add("test", "Test", "Cold Forest", "Temperate", "RWG", null, nope);
+  S.river = add("river", "Test River", "Hot Plains", "Temperate", "RWG", T.hilly(230, 120, 0), nope);
+  S.ocean = add("ocean", "Test Ocean", "Temperate Ocean", "Temperate", "RWG", null, nope);
+  S.coast = add("coast", "Test Coast", "River Oasis", "Temperate", "RWG", null, nope);
+  const cold0 = { cold: true };
+  S.polar = add("polar", "Polar", "Snow Desert", "Ice", "RWG", T.polar(), cold0);
+  S.snowHills = add("snowHills", "Snow Hills", "Snow Forest", "Ice", "RWG", T.mountainSpikes(), cold0);
+  S.snowRivers = add("snowRivers", "Snow Rivers", "Snow Forest", "Ice", "RWG", T.mountainRiver(), cold0);
+  S.snowLakes = add("snowLakes", "Snow Lakes", "Snow Forest", "Ice", "RWG", T.flatLakes(), cold0);
+  S.redwoodSnow = add("redwoodSnow", "Snowy Redwood", "Snow Forest", "Ice", "RWG", T.hilly(230, 120, 90), cold0);
+  S.tundraHills = add("tundraHills", "Tundra Hills", "Cold Plains", "Cold", "RWG", T.mountain());
+  S.tundraPlains = add("tundraPlains", "Tundra Plains", "Cold Plains", "Cold", "RWG", T.flatLakes());
+  S.taigaHills = add("taigaHills", "Taiga Hills", "Cold Forest", "Cold", "RWG", T.mountainRiver());
+  S.taigaPlains = add("taigaPlains", "Taiga Plains", "Cold Forest", "Cold", "RWG", T.flatLakes());
+  S.redwood = add("redwood", "Redwood", "Cold Forest", "Cold", "RWG", T.hilly(230, 120, 90));
+  S.darkRedwood = add("darkRedwood", "Dark Redwood", "Cold Forest", "Temperate", "RWG", T.hilly(230, 120, 0));
+  S.darkRedwoodPlains = add("darkRedwoodPlains", "Dark Redwood Plains", "Cold Forest", "Temperate", "RWG", T.grasslandFlats());
+  S.woodhills = add("woodhills", "Wooded Hills", "Temperate Forest", "Temperate", "RWG", T.hilly(230, 120, 0));
+  S.woodmountains = add("woodmountains", "Wooded Mountains", "Temperate Forest", "Temperate", "RWG", T.mountainRiver());
+  S.duneValleyForest = add("duneValleyForest", "Dune Valley Forest", "Hot Forest", "Oasis", "RWG", T.duneValley(220));
+  S.savanna = add("savanna", "Savanna", "Hot Plains", "Hot", "RWG", T.grasslandFlats());
+  S.savannaForest = add("savannaForest", "Savanna Forest", "Hot Plains", "Hot", "RWG", T.grasslandMountains());
+  S.savannaDunes = add("savannaDunes", "Savanna Dunes", "Hot Plains", "Hot", "RWG", T.duneValley(300));
+  S.stoneMountains = add("stoneMountains", "Stone Mountains", "Hot Plains", "Oasis", "RWG", T.hilly(230, 120, 0));
+  S.stoneMountainsCactus = add("stoneMountainsCactus", "Cactus Stone Mountains", "Hot Plains", "Oasis", "RWG", T.hilly(230, 120, 0));
+  S.hotForest = add("hotForest", "Hot Forest", "Hot Forest", "Hot", "RWG", T.grasslandFlats());
+  S.hotRedwood = add("hotRedwood", "Hot Redwood", "Hot Forest", "Hot", "RWG", T.grasslandFlats());
+  S.canyonForest = add("canyonForest", "Canyon Forest", "Hot Forest", "Oasis", "RWG", CANYON(69));
+  S.mesaPlains = add("mesaPlains", "Mesa Plains", "Hot Desert", "Hot", "RWG", T.mesa());
+  S.desert = add("desert", "Desert", "Hot Desert", "Oasis", "RWG", T.hilly(150, 50, 0));
+  S.desertMountains = add("desertMountains", "Desert Mountains", "Hot Desert", "Oasis", "RWG", T.hilly(230, 120, 0));
+  S.duneValley = add("duneValley", "Dune Valley", "Hot Desert", "Oasis", "RWG", T.dunes());
+  S.oasis = add("oasis", "Oasis", "Oasis", "Oasis", "RWG", T.hilly(230, 120, 20, 60, 63));
+  S.redDesertMountains = add("redDesertMountains", "Red Desert Mountains", "Hot Desert", "Oasis", "RWG", T.hilly(230, 120, 0));
+  S.redDesertOasis = add("redDesertOasis", "Red Desert Oasis", "Oasis", "Oasis", "RWG", T.hilly(230, 120, 20, 60, 63));
+  S.canyon = add("canyon", "Canyon", "Hot Plains", "Oasis", "RWG", CANYON(69));
+  S.mesa = add("mesa", "Mesa", "Hot Desert", "Oasis", "RWG", T.mesa());
+  S.hotPlainsCanyonIsland = add("hotPlainsCanyonIsland", "Hot Plains (Canyon)", "Hot Plains", "Oasis", "RWG", CANYON(69));
+  S.rainForestHigh = add("rainForestHigh", "High Rainforest", "High Rainforest", "Temperate", "RWG", T.highland(0, 140, 68, 200));
+  S.jungleHills = add("jungleHills", "Jungle Hills", "Jungle Hills", "Temperate", "RWG", T.hilly(230, 120, 50));
+  S.jungleCanyon = add("jungleCanyon", "Jungle Canyon", "Jungle Canyon", "Temperate", "RWG", CANYON(69));
+  S.redwoodJungle = add("redwoodJungle", "Redwood Jungle", "Redwood Jungle", "Temperate", "RWG", T.hilly(230, 100, 0));
+  S.coastIce = add("coastIce", "Ice Coast", "Snow Desert", "Temperate", "RWG", T2.coastIce(), { cold: true });
+  S.coastColdSlope = add("coastColdSlope", "Cold Slope Coast", "Cold Plains", "Temperate", "RWG", null, nope);
+  S.coastColdCliff = add("coastColdCliff", "Cold Cliff Coast", "Temperate Ocean", "Temperate", "RWG", null, nope);
+  S.coastDunes = add("coastDunes", "Dune Coast", "Temperate Ocean", "Temperate", "RWG", T2.coastDunes());
+  S.coastMangrove = add("coastMangrove", "Mangrove Coast", "Ocean Oasis", "Temperate", "RWG", null, nope);
+  S.coastOasis = add("coastOasis", "Oasis Coast", "River Oasis", "Temperate", "RWG", null, nope);
+  S.islandTropical = add("islandTropical", "Tropical Island", "Tropical Island", "Temperate", "RWG", null, nope);
+  // Support.init(): small/island vanilla biomes, then the RealisticBiomeOcean variants
+  const SUP = {};
+  SUP.mushroomIsland = add("support.mushroomIsland", "Mushroom Island", "MushroomIsland", "Wet", "Vanilla", T2.smallIsland());
+  SUP.icePlainsSpikes = add("support.icePlainsSpikes", "Ice Plains Spikes", "Ice Plains Spikes", "Ice", "Vanilla", T.highland(0, 140, 68, 200), { cold: true });
+  SUP.sunflowerPlains = add("support.sunflowerPlains", "Sunflower Plains", "Sunflower Plains", "Temperate", "Vanilla", T.marsh());
+  const oc = (key, name, f3, shallow) => add("support." + key, name, f3, "Temperate", "RWG", T2.ocean(shallow), { ocean: true });
+  SUP.oceanShallowSnow = oc("oceanShallowSnow", "Shallow Snow Ocean", "Cold Ocean", true);
+  SUP.oceanShallowCold = oc("oceanShallowCold", "Shallow Cold Ocean", "Cold Ocean", true);
+  SUP.oceanShallowHot = oc("oceanShallowHot", "Shallow Hot Ocean", "Hot Ocean", true);
+  SUP.oceanShallowWet = oc("oceanShallowWet", "Shallow Wet Ocean", "Wet Ocean", true);
+  SUP.oceanDeepSnow = oc("oceanDeepSnow", "Deep Snow Ocean", "Cold Ocean", false);
+  SUP.oceanDeepCold = oc("oceanDeepCold", "Deep Cold Ocean", "Deep Ocean", false);
+  SUP.oceanDeepHot = oc("oceanDeepHot", "Deep Hot Ocean", "Hot Ocean", false);
+  SUP.oceanDeepWet = oc("oceanDeepWet", "Deep Wet Ocean", "Wet Ocean", false);
+  // SupportBOP.init(): kelp + coral oceans (replace Support.oceanShallowKelp/Coral), volcano island, then land biomes
+  SUP.oceanShallowKelp = add("support.oceanShallowKelp", "Kelp Forest", "Kelp Forest", "Temperate", "BoP", T2.ocean(true), { ocean: true });
+  SUP.oceanShallowCoral = add("support.oceanShallowCoral", "Coral Reef", "Coral Reef", "Temperate", "BoP", T2.ocean(true), { ocean: true });
+  SUP.volcanoIsland = add("support.volcanoIsland", "Volcano Island", "Volcano", "Hot", "BoP", T2.volcano(), { volcano: true });
+  const L = { snow: {}, cold: {}, hot: {}, wet: {} };
+  for (const c of Object.keys(L)) for (const p of ["core", "border", "coldBorder", "hotBorder", "veryColdBorder", "veryHotBorder",
+    "littoral", "small", "island", "smallIsland", "largeIsland"]) L[c][p] = [];
+  const PL = { CORE: "core", BORDER: "border", COLD_BORDER: "coldBorder", HOT_BORDER: "hotBorder", VERY_COLD_BORDER: "veryColdBorder",
+    VERY_HOT_BORDER: "veryHotBorder", LITTORAL: "littoral", SMALL: "small", ISLAND: "island", SMALL_ISLAND: "smallIsland", LARGE_ISLAND: "largeIsland" };
+  const addBiome = (b, cat, pl = cat === "SMALL" ? "SMALL" : "CORE") => { // Support.addBiome
+    if (cat === "SMALL") { for (const c of ["snow", "cold", "hot", "wet"]) L[c].small.push(b); return; } // + biomes_small
+    L[cat.toLowerCase()][PL[pl]].push(b);
+  };
+  // Support.init() placements (hotPlainsCanyonIsland was registered statically above)
+  addBiome(S.hotPlainsCanyonIsland, "HOT", "LARGE_ISLAND");
+  addBiome(SUP.mushroomIsland, "WET", "SMALL_ISLAND");
+  addBiome(SUP.icePlainsSpikes, "SNOW", "SMALL");
+  addBiome(SUP.sunflowerPlains, "COLD", "SMALL");
+  // SupportBOP.init(), in source order: [field, river, terrain, category, placement, display-name suffix]
+  const seen = {};
+  const bop = (f, river, terrain, cat, pl, suffix, extra = {}) => {
+    seen[f] = (seen[f] || 0) + 1;
+    const key = "bop." + f + (seen[f] > 1 ? "#" + seen[f] : "");
+    const nm = BOP_NAMES[f] || camel(f);
+    const b = add(key, extra.name || (nm + (suffix ? " (" + suffix + ")" : "")), extra.f3 || nm, river, "BoP", terrain, { cold: BOP_COLD.has(f) && !extra.f3 });
+    if (cat) addBiome(b, cat, pl);
+    return b;
+  };
+  bop("bambooForest", "Wet", T.swampMountain(135, 300), "WET", "CORE");
+  bop("bayou", "Wet", T.swampRiver(), "WET", "LITTORAL");
+  bop("bog", "Hot", T.marsh(), "HOT", "CORE");
+  const boreal = bop("borealForest", "Cold", T.mountainSpikes(), "SNOW", "HOT_BORDER"); addBiome(boreal, "SNOW", "VERY_HOT_BORDER");
+  bop("brushland", "Hot", GH(), "HOT", "CORE");
+  bop("brushland", "Oasis", T.duneValley(300), "HOT", "CORE", "dunes");
+  bop("canyon", "Hot", CANYON(69), "HOT", "CORE");
+  bop("chaparral", "Hot", GH(), "HOT", "COLD_BORDER");
+  bop("cherryBlossomGrove", "Temperate", T.highland(6, 120, 65, 200), "COLD", "CORE");
+  bop("coniferousForest", "Cold", T.mountainRiver(), "COLD", "CORE");
+  bop("snowyConiferousForest", "Ice", T.mountainRiver(), "SNOW", "HOT_BORDER");
+  bop("deadForest", "Temperate", T.grasslandHills(50, 180, 13, 100, 28, 260, 70), "COLD", "CORE");
+  bop("deadSwamp", "Wet", T.marsh(), "WET", "LITTORAL");
+  bop("deciduousForest", "Hot", HL(), "HOT", "CORE");
+  bop("eucalyptusForest", "Wet", T.swampMountain(135, 300), "WET", "CORE");
+  bop("fen", "Hot", HL(), "HOT", "CORE");
+  bop("flowerField", "Temperate", T.marsh(), "COLD", "SMALL");
+  bop("frostForest", "Ice", HL(), "SNOW", "CORE");
+  bop("fungiForest", "Wet", T.swampMountain(135, 300), "WET", "CORE");
+  bop("fungiForest", "Wet", CANYON(61), "WET", "LARGE_ISLAND", null, { name: "Jungle Mesa Island", f3: "Jungle Mesa" }); // RealisticBiomeFungiCanyonIsland
+  bop("fungiForest", "Wet", CANYON(61), "WET", "CORE", null, { name: "Jungle Mesa", f3: "Jungle Mesa" });               // RealisticBiomeFungiCanyonIsland
+  bop("garden", "Temperate", T.mountainSpikes(), "COLD", "SMALL_ISLAND");
+  bop("grove", "Temperate", T.highland(0, 140, 68, 200, 0.3), "COLD", "CORE");
+  bop("heathland", "Oasis", T.duneValley(300), "HOT", "CORE");
+  bop("highland", "Temperate", T.highland(0, 140, 68, 150), "COLD", "CORE");
+  const jade1 = bop("jadeCliffs", "Hot", T.hilly(230, 120, 0), "COLD", "HOT_BORDER", "border");
+  bop("jadeCliffs", "Hot", T.hilly(230, 120, 0), "COLD", "CORE");
+  bop("landOfLakesMarsh", "Wet", GH(), "HOT", "HOT_BORDER");
+  bop("lavenderFields", "Temperate", T.mountainSpikes(), "COLD", "CORE");
+  bop("lushDesert", "Hot", GH(), "HOT", "CORE");
+  bop("lushSwamp", "Wet", T.swampRiver(), "WET", "LITTORAL");
+  bop("mapleWoods", "Temperate", HL(), "COLD", "CORE");
+  bop("mangrove", "Wet", T.swampRiver(), "WET", "LITTORAL");
+  bop("meadow", "Temperate", T.mountainSpikes(), "COLD", "COLD_BORDER");
+  bop("garden", "Wet", T.mountainRiver(), "WET", "CORE", "moor terrain");
+  bop("mountain", "Hot", T.mountainRiver(), "HOT", "CORE");
+  bop("ominousWoods", "Cold", T.hilly(230, 120, 0), "SNOW", "SMALL_ISLAND");
+  bop("outback", "Oasis", T.duneValley(300), "HOT", "CORE");
+  bop("prairie", "Hot", GH(), "HOT", "CORE");
+  bop("rainforest", "Wet", T.swampMountain(120, 300), "WET", "COLD_BORDER");
+  bop("quagmire", "Wet", T.marsh(), "WET", "SMALL");
+  bop("redwoodForest", "Temperate", T.grasslandHills(80, 180, 13, 100, 38, 260, 71), "COLD", "CORE");
+  bop("sacredSprings", "Wet", T.highland(0, 120, 68, 200), "WET", "CORE");
+  bop("seasonalForest", "Temperate", HL(), "COLD", "CORE");
+  bop("shield", "Cold", GH(), "COLD", "CORE");
+  bop("shrubland", "Hot", GH(), "HOT", "CORE");
+  bop("sludgepit", "Wet", T.marsh(), "WET", "LITTORAL");
+  bop("temperateRainforest", "Wet", T.mountainRiver(), "COLD", "HOT_BORDER");
+  bop("tropicalRainforest", "Wet", HL(), "WET", "COLD_BORDER");
+  bop("tropics", "Wet", T.marsh(), "WET", "LITTORAL", "littoral");
+  bop("tropics", "Wet", T.marsh(), "WET", "SMALL_ISLAND", "wet island");
+  bop("tropics", "Hot", T.marsh(), "HOT", "SMALL_ISLAND", "hot island");
+  bop("tropics", "Hot", T.marsh(), "HOT", "SMALL", "small");
+  bop("oasis", "Hot", T.marsh(), "HOT", "SMALL");
+  const tundra = bop("tundra", "Ice", GH(), "SNOW", "HOT_BORDER"); addBiome(tundra, "SNOW", "VERY_HOT_BORDER");
+  bop("wetland", "Cold", T.marsh(), "COLD", "CORE");
+  bop("woodland", "Temperate", HL(), "COLD", "CORE");
+  // SupportTC.init(): iterates biome ids 0..255 → Magical Forest (192) before Tainted Land (193)
+  addBiome(add("tc.magicalForest", "Magical Forest (snow island)", "Magical Forest", "Cold", "Thaumcraft", T.swampMountain(135, 300)), "SNOW", "SMALL_ISLAND");
+  addBiome(add("tc.magicalForest#2", "Magical Forest (cold island)", "Magical Forest", "Cold", "Thaumcraft", T.swampMountain(135, 300)), "COLD", "SMALL_ISLAND");
+  addBiome(add("tc.taint", "Tainted Land", "Tainted Land", "Temperate", "Thaumcraft", T.smallSupport()), "SMALL");
+  // Support.rebuildExtremeBorderMountains(): RealisticBiomeMountainChain.forBiome() wrappers (new ids, in this order)
+  const MCT = T.hilly(230, 120, 0, 260, 120);
+  const rebuild = (fallback, target) => {
+    const src = target.length === 0 ? fallback : target.slice();
+    target.length = 0;
+    for (const b of src) {
+      let m = b.mcVariant;
+      if (!m) m = b.mcVariant = add("mountainChain." + b.key, "Mountain Chain (" + b.f3 + ")", b.f3, b.river, b.mod, MCT,
+        { mc: true, cold: b.cold, backing: b });
+      target.push(b.mc ? b : m);
+    }
+  };
+  rebuild(L.snow.hotBorder, L.snow.veryHotBorder);
+  rebuild(L.cold.hotBorder, L.cold.veryHotBorder);
+  rebuild(L.hot.coldBorder, L.hot.veryColdBorder);
+  rebuild(L.wet.coldBorder, L.wet.veryColdBorder);
+  // ChunkManagerRealistic constructor: core lists = built-ins + Support core pools
+  const core = {
+    snow: [S.polar, S.snowHills, S.snowRivers, S.snowLakes, S.redwoodSnow],
+    cold: [S.tundraHills, S.tundraPlains, S.taigaHills, S.taigaPlains, S.redwood, S.darkRedwood, S.darkRedwoodPlains,
+      S.woodhills, S.woodmountains, S.woodhills, S.woodmountains],
+    hot: [S.duneValleyForest, S.savanna, S.savannaForest, S.savannaDunes, S.stoneMountains, S.stoneMountainsCactus, S.hotForest,
+      S.hotRedwood, S.canyonForest, S.mesaPlains, S.desert, S.desertMountains, S.duneValley, S.oasis, S.redDesertMountains,
+      S.redDesertOasis, S.canyon, S.mesa],
+    wet: [S.rainForestHigh, S.jungleHills, S.jungleCanyon, S.redwoodJungle],
+  };
+  const CL = ["snow", "cold", "hot", "wet"].map(c => Object.assign({}, L[c], { core: core[c].concat(L[c].core) }));
+  // groups: climate pools containing the biome; several climates / none → special
+  const where = new Map();
+  CL.forEach((lists, ci) => { for (const p of Object.keys(lists)) for (const b of lists[p]) { if (!where.has(b)) where.set(b, new Set()); where.get(b).add(ci); } });
+  const GN = ["snow", "cold", "hot", "wet"];
+  for (const b of all) {
+    const w = where.get(b);
+    b.group = b.ocean ? "ocean" : (w && w.size === 1) ? GN[[...w][0]] : "special";
+    b.color = COLORS[b.key] || "#ff00ff";
+  }
+  // placeable = reachable from getBiomeDataAt (continental)
+  const reach = new Set([S.coastIce, S.coastDunes, SUP.volcanoIsland, SUP.oceanShallowSnow, SUP.oceanShallowCold, SUP.oceanShallowKelp,
+    SUP.oceanShallowCoral, SUP.oceanShallowHot, SUP.oceanShallowWet, SUP.oceanDeepSnow, SUP.oceanDeepCold, SUP.oceanDeepHot, SUP.oceanDeepWet]);
+  for (const b of where.keys()) reach.add(b);
+  const list = all.filter(b => reach.has(b));
+  list.forEach((b, i) => { b.idx = i; });
+  for (const b of all) if (!reach.has(b)) b.idx = -1;
+  return {
+    list, all, S, SUP, CL,
+    oceanDeep: [null, SUP.oceanDeepSnow, SUP.oceanDeepCold, SUP.oceanDeepHot, SUP.oceanDeepWet],
+    oceanShallow: [null, SUP.oceanShallowSnow, SUP.oceanShallowCold, SUP.oceanShallowHot, SUP.oceanShallowWet],
+  };
+})();
+
+// ChunkGeneratorRealistic.parabolicField (sampleSize 8)
+const PARA = (() => {
+  const n = 17, a = new Float32Array(n * n); let tot = 0;
+  for (let j = -8; j <= 8; j++) for (let k = -8; k <= 8; k++) {
+    const f = F(F(0.445) / F(Math.sqrt(F(F(j * j + k * k) + F(0.3)))));
+    a[j + 8 + (k + 8) * n] = f; tot = F(tot + f);
+  }
+  for (let i = 0; i < a.length; i++) a[i] = F(a[i] / tot);
+  return a;
+})();
+
+const SEA_LEVEL_Y = 62; // generateTerrain: stone for y <= (int)h, water for (int)h < y < 63, air above → top water block y = 62
+const C_SNOW = F(0.2251875), C_COLD = F(0.545), C_HOT = F(0.78), C_SEL = F(0.9999999);
+const climateFromValue = v => v < C_SNOW ? 1 : v < C_COLD ? 2 : v < C_HOT ? 3 : 4; // wetEnabled (biomes_wet non-empty)
+
+class RWGWorld {
+  constructor(seedBig) {
+    const seed = BigInt.asIntN(64, BigInt(seedBig));
+    this.seed = seed;
+    this._perlin = new PerlinNoise(seed);                                                    // perlin (NoiseGeneratorWrapper → Perlin)
+    this.cell = new CellNoise(seed);                                                         // cell (useDistance) and biomecell share k0/k1
+    this.climateWarp = new PerlinNoise(BigInt.asIntN(64, seed ^ 0xBB67AE8584CAA73Bn));
+    this.smallPts = new PoissonPointNoise(seed ^ 0x510E527FADE682D1n, 1020, 4);
+    this.continents = new ContinentalNoise(BigInt.asIntN(64, seed ^ 0x6A09E667F3BCC909n));
+    this.cScale = F(F(1400) * F(0.4)); this.cStrength = F(F(1400) * F(0.8));
+    this.bScale = F(F(500) * F(0.4)); this.bStrength = F(F(500) * F(0.175));
+    this.volcElig = new Map(); this.volcBase = new Map(); this.lavaElig = new Map();
+    this._ci = new Float64Array(4); this._ciB = new Float64Array(4); this._pX = 0; this._pY = 0;
+    this._b8 = new Map();
+  }
+  get perlin() { return this._perlin; }
+
+  // ---------------- ChunkManagerRealistic: climate & biome selection ----------------
+  // warpClimateCoordinates + biomecell.sampleTwo2D → [d1, v1, d2, v2]; climate value = noise() * .5f + .5f
+  climateInfo(x, z, out) {
+    const cw = this.climateWarp, cs = this.cScale, st = this.cStrength, fx = F(x), fz = F(z);
+    const w0 = F(fx + F(cw.noise2(F(fx / cs), F(fz / cs)) * st));
+    const w1 = F(fz + F(cw.noise2(F(F(fx + 1731) / cs), F(F(fz - 2459) / cs)) * st));
+    return this.cell.sampleTwo2D((w0 + 4000) / 1400, w1 / 1400, out || this._ci);
+  }
+  climateAt(x, z) { const s = this.climateInfo(x, z); return climateFromValue(F(F(F(s[1]) * 0.5) + 0.5)); }
+  selector(x, z) { // sampleBiomeSelector
+    const cw = this.climateWarp, sc = this.bScale, st = this.bStrength, fx = F(x), fz = F(z);
+    const wX = F(fx + F(cw.noise2(F(F(fx - 8191) / sc), F(F(fz + 3137) / sc)) * st));
+    const wY = F(fz + F(cw.noise2(F(F(fx + 5171) / sc), F(F(fz - 6971) / sc)) * st));
+    return F(F(this.cell.value(F(wX / 500), F(wY / 500)) * 0.5) + 0.5);
+  }
+  selectBiome(list, x, z) {
+    let v = this.selector(x, z); v = v < 0 ? 0 : v >= C_SEL ? C_SEL : v;
+    return list[Math.trunc(F(v * list.length))];
+  }
+  selectCombined(shared, dir, x, z) {
+    const len = shared.length + dir.length, v = this.selector(x, z);
+    const i = Math.trunc(F(Math.max(0, Math.min(C_SEL, v)) * len));
+    return i < shared.length ? shared[i] : dir[i - shared.length];
+  }
+  // getLandBiomeAt(x, z, climate); ci = climateInfo(x, z) when already computed
+  landBiome(x, z, climate, ci) {
+    const ix = climate - 1, P = REG.CL[ix];
+    if (P.small.length > 0) {
+      const s = this.smallPts.sample(x, z);
+      if (s.d < 75) return this.selectBiome(P.small, Math.trunc(s.c.x) | 0, Math.trunc(s.c.z) | 0);
+    }
+    if (!ci) ci = this.climateInfo(x, z);
+    const nb = climateFromValue(F(ci[3] * 0.5 + 0.5));
+    if (nb !== climate && (ci[2] - ci[0]) * 1400 < 288) {
+      const dir = nb < climate ? -1 : 1;
+      if (Math.abs(nb - climate) > 1) {
+        const ex = dir < 0 ? P.veryColdBorder : P.veryHotBorder;
+        if (ex.length > 0) return this.selectBiome(ex, x, z);
+      }
+      const d = dir < 0 ? P.coldBorder : P.hotBorder, sh = P.border;
+      if (sh.length > 0 || d.length > 0) return this.selectCombined(sh, d, x, z);
+    }
+    return this.selectBiome(P.core, x, z);
+  }
+  selectIslandBiome(tier, climate, sx, sz) {
+    const P = REG.CL[climate - 1], sized = tier === 0 ? P.smallIsland : P.largeIsland, gen = P.island;
+    return gen.length === 0 && sized.length === 0 ? null : this.selectCombined(gen, sized, sx, sz);
+  }
+  oceanBiome(continent, climate, x, z) {
+    if (continent < -300) return REG.oceanDeep[climate];
+    const p = this._perlin;
+    const patch = F(F(p.noise2(F(F(x) / 180), F(F(z) / 180)) * F(0.7)) + F(p.noise2(F(F(x) / 55), F(F(z) / 55)) * F(0.3)));
+    if ((climate === 1 || climate === 2) && continent < -90 && patch > 0) return REG.SUP.oceanShallowKelp;
+    if ((climate === 3 || climate === 4) && continent < -20 && continent > -150 && patch > F(0.07)) return REG.SUP.oceanShallowCoral;
+    return REG.oceanShallow[climate];
+  }
+  // getBiomeDataAt (continental) → biome object
+  biomeObj(x, z) {
+    const L = this.continents.sample(x, z), continent = L.value;
+    if (continent < 0) return this.oceanBiome(continent, this.climateAt(x, z), x, z);
+    if (this.volcanoChecked(x, z, VOLCANO_RADIUS, L) !== null) return REG.SUP.volcanoIsland;
+    const ci = this.climateInfo(x, z, this._ciB), climate = climateFromValue(F(F(F(ci[1]) * 0.5) + 0.5));
+    let out = null, isl = false, lit = false;
+    const tier = this.continents.islandSizeTier(L);
+    if (tier >= 0) {
+      const sx = L.islandSeedX, sz = L.islandSeedZ;
+      out = this.selectIslandBiome(tier, this.climateAt(sx, sz), sx, sz);
+      if (out !== null) isl = true;
+    }
+    if (out === null) {
+      out = this.landBiome(x, z, climate, ci);
+      const lt = REG.CL[climate - 1].littoral;
+      if (continent < 432 && lt.length > 0) { out = this.selectBiome(lt, x, z); lit = true; }
+    }
+    if (!isl && !lit && continent < 24) out = out.cold ? REG.S.coastIce : REG.S.coastDunes;
+    return out;
+  }
+  biomeAt(x, z) { return this.biomeObj(x, z).idx; }
+  continentAt(x, z) { return this.continents.sample(x, z).value; }  // getContinentValue
+  oceanValue(c) { const v = F(1 + F(c / 100)); return v < 0 ? 0 : v > 2 ? 2 : v; } // getTerrainOceanValue(float)
+  // metaBiome / climate exposed for convenience (getClimateAt)
+  climate(x, z) { return this.climateAt(x, z); }
+
+  // ---------------- rivers ----------------
+  rawRiverStrength(x, z) {
+    const p = this._perlin;
+    const pX = F(F(x) + F(p.noise1(F(F(z) / 240)) * 220)), pY = F(F(z) + F(p.noise1(F(F(x) / 240)) * 220));
+    this._pX = pX; this._pY = pY;
+    return this.cell.border(pX / 1250, pY / 1250, 50 / 300, 1);
+  }
+  // getRiverStrength(x, z): raw strength, flattened inside any volcano candidate's footprint (no eligibility check)
+  riverStrength(x, z) {
+    const s = this.rawRiverStrength(x, z);
+    const v = ContinentalNoise.volcanoLocal(this.continents.sample(x, z), VOLCANO_ISLAND_RADIUS);
+    if (v === null) return s;
+    const dist = F(Math.sqrt(F(F(v[0] * v[0]) + F(v[1] * v[1]))));
+    if (dist <= VOLCANO_RADIUS) return s > 0 ? s : 0;
+    const blend = F((dist - VOLCANO_RADIUS) / (VOLCANO_ISLAND_RADIUS - VOLCANO_RADIUS));
+    return s < 0 ? F(s * blend) : s;
+  }
+  // calculateRiver(x, z, st, h) — pX/pY are the warped coordinates of that column
+  calcRiver(x, z, st, h, pX, pY) {
+    if (st >= 0 || h <= 59) return h;
+    const p = this._perlin;
+    const rc = this.cell.border(pX / 1250, pY / 1250, 50 / 1300, 1);
+    const t = F(F(59 + F(p.noise2(F(F(x) / 12), F(F(z) / 12)) * 2)) + F(p.noise2(F(F(x) / 8), F(F(z) / 8)) * F(1.5)));
+    return F(F(h * F(rc + 1)) + F(t * -rc));
+  }
+  // replaceBlocksForBiome river-biome swap: inland && river > 0.05f && river + noise2(x/10f, z/10f)*0.15f > 0.8f (river = -strength)
+  isRiver(x, z, rs) {
+    if (!(this.continentAt(x, z) >= 24)) return false;
+    const r = F(-(rs === undefined ? this.riverStrength(x, z) : rs));
+    return r > F(0.05) && F(r + F(this._perlin.noise2(F(F(x) / 10), F(F(z) / 10)) * F(0.15))) > F(0.8);
+  }
+
+  // ---------------- volcanoes / lava caves ----------------
+  // cmr.getVolcanoCoordinates (radius 130) / getVolcanoVicinityCoordinates (radius 160): [localX, localZ] or null
+  volcanoChecked(x, z, radius, L) {
+    L = L || this.continents.sample(x, z);
+    const v = ContinentalNoise.volcanoLocal(L, radius);
+    return v !== null && this.canGenerateVolcanoAt(x, z, L) ? v : null;
+  }
+  canGenerateVolcanoAt(x, z, L) {
+    const key = L.volcanoKey; if (key === null) return false;
+    let e = this.volcElig.get(key); if (e !== undefined) return e;
+    const cX = Math.round(L.volcanoCenterX) | 0, cZ = Math.round(L.volcanoCenterZ) | 0;
+    e = !this.hasRiverNearVolcano(cX, cZ) && volcanoCanGenerateAtHeight(this.volcanoBaseHeight(x, z, L));
+    if (this.volcElig.size > 100000) this.volcElig.clear();
+    this.volcElig.set(key, e); return e;
+  }
+  hasRiverNearVolcano(cX, cZ) {
+    const R = 160, R2 = R * R;
+    for (let ox = -R; ox <= R; ox += 16) for (let oz = -R; oz <= R; oz += 16)
+      if (ox * ox + oz * oz <= R2 && this.rawRiverStrength(cX + ox, cZ + oz) < 0) return true;
+    return false;
+  }
+  volcanoBaseHeight(x, z, L) { // getVolcanoBaseHeight
+    L = L || this.continents.sample(x, z);
+    const key = L.volcanoKey; if (key === null) return 63;
+    let h = this.volcBase.get(key); if (h !== undefined) return h;
+    const cX = Math.round(L.volcanoCenterX) | 0, cZ = Math.round(L.volcanoCenterZ) | 0;
+    const ci = this.climateInfo(cX, cZ, new Float64Array(4)), climate = climateFromValue(F(F(F(ci[1]) * 0.5) + 0.5));
+    let b = L.volcano && L.volcanoIsland ? this.selectIslandBiome(1, climate, cX, cZ) : this.landBiome(cX, cZ, climate, ci);
+    if (b === null) b = this.landBiome(cX, cZ, climate, ci);
+    const continent = this.continentAt(cX, cZ);
+    const river = this.rawRiverStrength(cX, cZ), pX = this._pX, pY = this._pY;
+    h = b.terrain(this._perlin, this.cell, cX, cZ, 1, F(river + 1), this.oceanValue(continent));
+    h = this.calcRiver(cX, cZ, river, h, pX, pY);
+    if (this.volcBase.size > 100000) this.volcBase.clear();
+    this.volcBase.set(key, h); return h;
+  }
+  volcanoUnderlyingBiome(x, z) { // getVolcanoUnderlyingBiome
+    const L = this.continents.sample(x, z);
+    if (!L.volcano) return null;
+    const cX = Math.round(L.volcanoCenterX) | 0, cZ = Math.round(L.volcanoCenterZ) | 0;
+    const climate = this.climateAt(cX, cZ);
+    let b = L.volcano && L.volcanoIsland ? this.selectIslandBiome(1, climate, cX, cZ) : this.landBiome(x, z, this.climateAt(x, z));
+    if (b === null) b = this.landBiome(cX, cZ, climate);
+    return b;
+  }
+  // cmr.getLavaCaveCoordinates: [localX, localZ] or null
+  lavaCaveChecked(x, z, L) {
+    L = L || this.continents.sample(x, z);
+    if (!L.lavaCave) return null;
+    const key = L.lavaCaveKey; let e = this.lavaElig.get(key);
+    if (e === undefined) {
+      const cX = Math.round(L.lavaCaveCenterX) | 0, cZ = Math.round(L.lavaCaveCenterZ) | 0;
+      e = this.noiseAt(cX, cZ) > 63;
+      if (this.lavaElig.size > 100000) this.lavaElig.clear();
+      this.lavaElig.set(key, e);
+    }
+    return e ? [L.lavaCaveLocalX, L.lavaCaveLocalZ] : null;
+  }
+  noiseAt(x, z) { // getNoiseAt (single biome, no blending)
+    const river = F(this.riverStrength(x, z) + 1);
+    if (river < 0.5) return 59;
+    const ocean = this.oceanValue(this.continentAt(x, z));
+    return this.biomeObj(x, z).terrain(this._perlin, this.cell, x, z, 1, river, ocean);
+  }
+
+  // ---------------- ChunkGeneratorRealistic.getNewNoise ----------------
+  genBiome(x, z) { // lattice biome: volcano island replaced by its underlying biome
+    let b = this.biomeObj(x, z);
+    if (b.volcano) { const u = this.volcanoUnderlyingBiome(x, z); if (u !== null) b = u; }
+    return b;
+  }
+  biome8(x, z) { // genBiome on the 8-block sample lattice (x, z multiples of 8), cached → biomeID
+    const m = this._b8, k = ((x >> 3) + 4194304) * 8388608 + ((z >> 3) + 4194304);
+    let v = m.get(k); if (v === undefined) { if (m.size > 400000) m.clear(); v = this.genBiome(x, z).id; m.set(k, v); } return v;
+  }
+  // one column: Σ rNoise·weight over active biomes (ascending id), volcano / lava-cave overlay, river carving, chain fade
+  columnHeight(x, z, W, o, ids, m) {
+    const p = this._perlin, cell = this.cell, all = REG.all;
+    const L = this.continents.sample(x, z), continent = L.value, ocean = this.oceanValue(continent);
+    const river = this.riverStrength(x, z), pX = this._pX, pY = this._pY, r1 = F(river + 1);
+    let th = 0, mcw = 0;
+    for (let k = 0; k < m; k++) {
+      const w = W[o + k]; if (!(w > 0)) continue;
+      const b = all[ids[k]];
+      th = F(th + F(b.terrain(p, cell, x, z, w, r1, ocean) * w));
+      if (b.mc) mcw = F(mcw + w);
+    }
+    const vic = this.volcanoChecked(x, z, VOLCANO_ISLAND_RADIUS, L);
+    if (vic !== null) th = volcanoNoiseAt(p, vic[0], vic[1], this.volcanoBaseHeight(x, z, L), th);
+    else { const cave = this.lavaCaveChecked(x, z, L); if (cave !== null) th = lavaSurfaceHeight(p, cave[0], cave[1], th); }
+    const carved = this.calcRiver(x, z, river, th, pX, pY);
+    if (mcw === 0) return carved;
+    let fade = Math.max(0, Math.min(1, F(F(mcw - F(0.35)) / F(0.65))));
+    fade = F(F(fade * fade) * F(3 - F(2 * fade)));
+    return F(carved + F(F(th - carved) * fade));
+  }
+  heightChunk(cx, cz, out, step = 1, start = 0) {
+    const x0 = cx * 16, z0 = cz * 16;
+    const bd = new Int32Array(441); const seen = new Set();
+    for (let i = -8; i < 13; i++) for (let j = -8; j < 13; j++) { const b = this.biome8(x0 + i * 8 - 8, z0 + j * 8 - 8); bd[(i + 8) * 21 + (j + 8)] = b; seen.add(b); }
+    const ids = [...seen].sort((a, b) => a - b), m = ids.length, loc = new Map(ids.map((b, i) => [b, i]));
+    for (let q = 0; q < 441; q++) bd[q] = loc.get(bd[q]);
+    const hr = new Float32Array(81 * m), sr = new Float32Array(625 * m);
+    const mix = (A, a, B, b, C, c, D, d, R, r) => { // mix4: (first + second + third + fourth) * 0.25f
+      a *= m; b *= m; c *= m; d *= m; r *= m;
+      for (let k = 0; k < m; k++) R[r + k] = F(F(F(F(A[a + k] + B[b + k]) + C[c + k]) + D[d + k]) * 0.25);
+    };
+    let i, j;
+    for (i = -1; i < 4; i++) for (j = -1; j < 4; j++) {
+      const o = ((i * 2 + 2) * 9 + (j * 2 + 2)) * m;
+      for (let k = -8; k <= 8; k++) for (let l = -8; l <= 8; l++) {
+        const q = o + bd[(i + k + 9) * 21 + (j + l + 9)];
+        hr[q] = F(hr[q] + PARA[k + 8 + (l + 8) * 17]);
+      }
+    }
+    for (i = 0; i < 4; i++) for (j = 0; j < 4; j++)
+      mix(hr, (i * 2) * 9 + (j * 2), hr, (i * 2 + 2) * 9 + (j * 2), hr, (i * 2) * 9 + (j * 2 + 2), hr, (i * 2 + 2) * 9 + (j * 2 + 2), hr, (i * 2 + 1) * 9 + (j * 2 + 1));
+    for (i = 0; i < 7; i++) for (j = 0; j < 7; j++) {
+      if (((i ^ j) & 1) === 1) mix(hr, i * 9 + (j + 1), hr, (i + 1) * 9 + j, hr, (i + 1) * 9 + (j + 2), hr, (i + 2) * 9 + (j + 1), sr, (i * 4) * 25 + (j * 4));
+      else sr.set(hr.subarray(((i + 1) * 9 + (j + 1)) * m, ((i + 1) * 9 + (j + 2)) * m), ((i * 4) * 25 + (j * 4)) * m);
+    }
+    for (i = 0; i < 6; i++) for (j = 0; j < 6; j++)
+      mix(sr, (i * 4) * 25 + (j * 4), sr, (i * 4 + 4) * 25 + (j * 4), sr, (i * 4) * 25 + (j * 4 + 4), sr, (i * 4 + 4) * 25 + (j * 4 + 4), sr, (i * 4 + 2) * 25 + (j * 4 + 2));
+    for (i = 0; i < 11; i++) for (j = 0; j < 11; j++) if (((i ^ j) & 1) === 1)
+      mix(sr, (i * 2) * 25 + (j * 2 + 2), sr, (i * 2 + 2) * 25 + (j * 2), sr, (i * 2 + 2) * 25 + (j * 2 + 4), sr, (i * 2 + 4) * 25 + (j * 2 + 2), sr, (i * 2 + 2) * 25 + (j * 2 + 2));
+    for (i = 0; i < 9; i++) for (j = 0; j < 9; j++)
+      mix(sr, (i * 2 + 2) * 25 + (j * 2 + 2), sr, (i * 2 + 4) * 25 + (j * 2 + 2), sr, (i * 2 + 2) * 25 + (j * 2 + 4), sr, (i * 2 + 4) * 25 + (j * 2 + 4), sr, (i * 2 + 3) * 25 + (j * 2 + 3));
+    for (i = 0; i < 16; i++) for (j = 0; j < 16; j++) if (((i ^ j) & 1) === 1)
+      mix(sr, (i + 3) * 25 + (j + 4), sr, (i + 4) * 25 + (j + 3), sr, (i + 4) * 25 + (j + 5), sr, (i + 5) * 25 + (j + 4), sr, (i + 4) * 25 + (j + 4));
+    const h = out || new Float32Array(256);
+    for (i = start; i < 16; i += step) for (j = start; j < 16; j += step)
+      h[i * 16 + j] = this.columnHeight(x0 + i, z0 + j, sr, ((i + 4) * 25 + (j + 4)) * m, ids, m);
+    return h;
+  }
+  // Single-column estimate: the un-mixed parabolic weights of the nearest 8-block lattice point (= hugeRender at that
+  // point). Exact (bit-identical to heightChunk) when x and z are both multiples of 8; elsewhere differs only where the
+  // blend weights vary, i.e. within ~64 blocks of a biome boundary. Everything else (rivers, volcano, caves) is exact.
+  heightApprox(x, z) {
+    const px = Math.round(x / 8) * 8, pz = Math.round(z / 8) * 8;
+    const acc = this._acc || (this._acc = new Float32Array(REG.all.length)), used = this._used || (this._used = []);
+    used.length = 0;
+    for (let k = -8; k <= 8; k++) for (let l = -8; l <= 8; l++) {
+      const b = this.biome8(px + k * 8, pz + l * 8);
+      if (acc[b] === 0) used.push(b);
+      acc[b] = F(acc[b] + PARA[k + 8 + (l + 8) * 17]);
+    }
+    if (used.length > 1) used.sort((a, b) => a - b);
+    const m = used.length, W = this._W || (this._W = new Float32Array(REG.all.length));
+    for (let k = 0; k < m; k++) { W[k] = acc[used[k]]; acc[used[k]] = 0; }
+    return this.columnHeight(x, z, W, 0, used, m);
+  }
+  heightLattice(Lt, x, z) { // heightApprox() using a filled BiomeLattice
+    const px = Math.round(x / 8) * 8, pz = Math.round(z / 8) * 8;
+    const i0 = (px - Lt.x0) / 8 - 8, j0 = (pz - Lt.z0) / 8 - 8, g = Lt.g, nz = Lt.nz;
+    const acc = this._acc || (this._acc = new Float32Array(REG.all.length)), used = this._used || (this._used = []);
+    used.length = 0;
+    for (let k = 0; k <= 16; k++) {
+      const o = (i0 + k) * nz + j0;
+      for (let l = 0; l <= 16; l++) {
+        const b = g[o + l];
+        if (acc[b] === 0) used.push(b);
+        acc[b] = F(acc[b] + PARA[k + l * 17]);
+      }
+    }
+    if (used.length > 1) used.sort((p, q) => p - q);
+    const m = used.length, W = this._W || (this._W = new Float32Array(REG.all.length));
+    for (let k = 0; k < m; k++) { W[k] = acc[used[k]]; acc[used[k]] = 0; }
+    return this.columnHeight(x, z, W, 0, used, m);
+  }
+}
+
+// Dense 8-block lattice for a region, filled progressively; feeds heightLattice().
+// a[] = REG.list index of biomeAt (for display), g[] = biomeID used by the height blend (volcano → underlying biome)
+class BiomeLattice {
+  constructor(world, xa, za, xb, zb) {
+    this.w = world;
+    this.x0 = Math.round(xa / 8) * 8 - 64; this.z0 = Math.round(za / 8) * 8 - 64;
+    this.nx = (Math.round(xb / 8) * 8 + 64 - this.x0) / 8 + 1; this.nz = (Math.round(zb / 8) * 8 + 64 - this.z0) / 8 + 1;
+    this.a = new Uint16Array(this.nx * this.nz); this.g = new Uint16Array(this.nx * this.nz); this.rows = 0;
+  }
+  get done() { return this.rows === this.nx; }
+  fill(deadline = Infinity) {
+    const w = this.w, nz = this.nz, now = typeof performance !== "undefined" ? () => performance.now() : () => Date.now();
+    while (this.rows < this.nx) {
+      const i = this.rows, x = this.x0 + i * 8, o = i * nz;
+      for (let j = 0; j < nz; j++) {
+        const z = this.z0 + j * 8, b = w.biomeObj(x, z);
+        this.a[o + j] = b.idx;
+        let gb = b; if (b.volcano) { const u = w.volcanoUnderlyingBiome(x, z); if (u !== null) gb = u; }
+        this.g[o + j] = gb.id;
+      }
+      this.rows++;
+      if (now() > deadline) break;
+    }
+    return this.done;
+  }
+}
+
+// Minecraft 1.7.10 seed-field parsing
+function javaStringHash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0; return h; }
+function parseSeed(text) {
+  const t = text.trim();
+  if (!t) return null;
+  if (/^[+-]?\d+$/.test(t)) {
+    const v = BigInt(t);
+    if (v >= -(1n << 63n) && v < (1n << 63n)) return v === 0n ? null : v;
+  }
+  return BigInt(javaStringHash(t));
+}
+
+// Approximate % of the overworld per REG.list entry: 400k biomeAt samples, 40 random seeds, |x|,|z| <= 30000 (ocean ≈ 34.1%)
+const FREQ = [1.231,1.124,1.079,1.682,1.668,0.441,0.448,0.436,0.429,0.398,0.425,0.394,0.776,0.782,0.362,0.371,0.345,0.353,0.349,0.362,0.35,0.334,0.349,0.338,0.349,0.33,0.321,0.318,0.318,0.549,0.512,0.532,0.328,0.798,0.772,0.744,0.715,0.115,0.495,0.088,0.048,0.048,1.49,2.04,2.699,2.606,4.289,6.012,6.234,5.96,1.839,0.943,0.011,0.735,0.569,0.54,0.352,0.497,0.536,0.515,1.694,0.397,0.615,0.39,0.614,0.563,0.479,1.165,0.511,0.052,1.635,1.139,0.31,1.096,0.076,0.617,0.49,0.599,0.708,0.599,1.657,0.586,0.53,0.521,0.635,0.864,1.221,1.124,0.515,0.074,0.486,0.516,0.532,0.049,0.6,1.1,0.569,0.6,0.525,0.819,1.071,0.763,0.834,0.142,0.226,0.047,0.057,0.499,0.614,0.609,0.09,0.118,0.285,0.963,1.378,0.691,1.014,1.167,0.845,1.241];
+
+if (typeof module !== "undefined") module.exports = {
+  F, JRandom, PerlinNoise, CellNoise, PoissonPointNoise, IslandPointNoise, ContinentLandmarkNoise, ContinentalNoise,
+  hash64, unit64, CFG, TERRAIN, TERRAIN2, PARA, REG, FREQ, COLORS, RIVER_COLORS, SEA_LEVEL_Y, RWGWorld, BiomeLattice,
+  parseSeed, javaStringHash, volcanoNoiseAt, lavaSurfaceHeight, climateFromValue, volcanoCanGenerateAtHeight,
+};
+// ===== UI =====
+const CLIMATE_OF = REG.list.map(b => b.group); // legend group: the climate pool a biome is placed from
+const CLIMATE_NAMES = { snow: "Snowy", cold: "Cold", hot: "Hot", wet: "Wet", ocean: "Ocean", special: "Coasts, volcanoes and rare patches" };
+const NB = REG.list.length;
+const PAL = new Uint8Array(NB * 3);
+REG.list.forEach((b, i) => { const c = COLORS[b.key] || "#ff00ff"; PAL[i*3] = parseInt(c.slice(1,3),16); PAL[i*3+1] = parseInt(c.slice(3,5),16); PAL[i*3+2] = parseInt(c.slice(5,7),16); });
+const RIVER_NAMES = Object.keys(RIVER_COLORS);
+const RPAL = RIVER_NAMES.map(n => [1,3,5].map(o => parseInt(RIVER_COLORS[n].slice(o,o+2),16)));
+const RIVER_IDX = REG.list.map(b => RIVER_NAMES.indexOf(b.river));
+
+// ---- state ----
+const S = { seedText: "", seed: 0n, world: null, cx: 0, cz: 0, scale: 1/8, rivers: true, grid: true, sel: new Set(), pin: null, layer: "biomes", contours: false };
+const $ = id => document.getElementById(id);
+const store = { get(k, d) { try { const v = localStorage.getItem("rwgmap:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+                set(k, v) { try { localStorage.setItem("rwgmap:" + k, JSON.stringify(v)); } catch {} } };
+
+// ---- tiles ----
+const TS = 128;
+const tiles = new Map(); // key -> {bpp, tx, tz, bio:Uint8Array, riv:Uint8Array, rows, canvas, painted}
+let tileGen = 0;
+function tileKey(bpp, tx, tz) { return bpp + ":" + tx + ":" + tz; }
+function levelFor(scale) { let b = 1; while (b * 2 <= 1 / scale && b < 256) b *= 2; return b; }
+function resetTiles() { tiles.clear(); tileGen++; }
+const HMAX = 16; // coarsest level (blocks per pixel) that gets terrain heights
+const wantH = t => S.layer !== "biomes" && t.bpp <= HMAX;
+const tileDone = t => t.rows === TS && (!wantH(t) || t.hrows === TS + 2);
+// exact heights, cached per chunk (strided columns at coarser levels)
+function heightAt(w, x, z, bpp) {
+  if (bpp >= 8) return w.heightApprox(x, z); // tiles use their own lattice; this path is for one-off lookups
+  const cx = Math.floor(x / 16), cz = Math.floor(z / 16), hc = w._hc || (w._hc = new Map()), k = cx + "," + cz + "," + bpp;
+  let a = hc.get(k);
+  if (!a) { if (hc.size > 3000) hc.delete(hc.keys().next().value); a = w.heightChunk(cx, cz, null, bpp, bpp >> 1); hc.set(k, a); }
+  return a[(x - cx * 16) * 16 + (z - cz * 16)];
+}
+const groundY = (x, z) => Math.trunc(heightAt(S.world, x, z, 1));
+function computeRows(t, maxMs) {
+  const w = S.world, bpp = t.bpp, x0 = t.tx * TS * bpp, z0 = t.tz * TS * bpp, off = bpp >> 1;
+  const exactRiver = bpp <= 2, t0 = performance.now();
+  while (t.rows < TS && performance.now() - t0 <= maxMs) {
+    const pz = t.rows, z = z0 + pz * bpp + off;
+    for (let px = 0; px < TS; px++) {
+      const x = x0 + px * bpp + off, i = pz * TS + px;
+      t.bio[i] = w.biomeAt(x, z);
+      const rs = w.riverStrength(x, z);
+      t.riv[i] = exactRiver ? (w.isRiver(x, z, rs) ? 1 : 0) : (-rs > 0.8 ? 1 : 0);
+    }
+    t.rows++;
+  }
+  if (t.rows === TS && wantH(t)) {
+    const P = TS + 2, lat = bpp >= 8;
+    if (!t.hgt) { t.hgt = new Float32Array(P * P); t.hrows = 0; }
+    if (lat && !t.lat) t.lat = new BiomeLattice(w, x0 - bpp + off, z0 - bpp + off, x0 + TS * bpp + off, z0 + TS * bpp + off);
+    if (lat && !t.lat.done) t.lat.fill(t0 + maxMs);
+    while (t.hrows < P && performance.now() - t0 <= maxMs && (!lat || t.lat.done)) {
+      const z = z0 + (t.hrows - 1) * bpp + off, o = t.hrows * P + 1;
+      for (let px = -1; px <= TS; px++) { const x = x0 + px * bpp + off; t.hgt[o + px] = lat ? w.heightLattice(t.lat, x, z) : heightAt(w, x, z, bpp); }
+      t.hrows++;
+    }
+    if (t.hrows === P) t.lat = null;
+  }
+  t.painted = false;
+}
+// elevation colours by Y (sea level 62)
+const H_STOPS = [[62, "#a6cf86"], [72, "#7fb562"], [88, "#a9bd63"], [104, "#d4c27a"], [122, "#c49562"], [145, "#94725c"], [170, "#9d968f"], [200, "#e2e0dc"], [230, "#ffffff"]];
+const W_STOPS = [[0, "#8cc4e6"], [6, "#4f95c9"], [16, "#2a679f"], [40, "#1b4373"]]; // by water depth
+function rampLUT(stops, n) {
+  const rgb = h => [1, 3, 5].map(o => parseInt(h.slice(o, o + 2), 16)), out = new Uint8Array(n * 3);
+  for (let y = 0; y < n; y++) {
+    let k = 0; while (k < stops.length - 2 && y > stops[k + 1][0]) k++;
+    const [y0, c0] = stops[k], [y1, c1] = stops[k + 1], f = Math.min(1, Math.max(0, (y - y0) / (y1 - y0))), a = rgb(c0), b = rgb(c1);
+    for (let c = 0; c < 3; c++) out[y * 3 + c] = Math.round(a[c] + (b[c] - a[c]) * f);
+  }
+  return out;
+}
+const HLUT = rampLUT(H_STOPS, 256), WLUT = rampLUT(W_STOPS, 64);
+function paintTile(t) {
+  if (!t.canvas) { t.canvas = document.createElement("canvas"); t.canvas.width = TS; t.canvas.height = TS; }
+  const ctx = t.canvas.getContext("2d"), img = ctx.createImageData(TS, TS), d = img.data;
+  const hl = S.sel.size > 0, want = wantH(t), hasH = want && t.hgt && t.hrows >= 3;
+  const ready = want ? (hasH ? Math.min(t.rows, t.hrows - 2) : 0) : t.rows, n = ready * TS;
+  const P = TS + 2, hg = t.hgt, e = 1 / (2 * t.bpp), mode = S.layer;
+  const CI = t.bpp <= 2 ? 8 : 16, cont = hasH && S.contours;
+  for (let i = 0; i < n; i++) {
+    const b = t.bio[i]; let r, g, bl;
+    if (S.rivers && t.riv[i] && mode !== "height") { const c = RPAL[RIVER_IDX[b]]; r = c[0]; g = c[1]; bl = c[2]; }
+    else { r = PAL[b*3]; g = PAL[b*3+1]; bl = PAL[b*3+2]; }
+    if (hasH) {
+      const q = ((i / TS | 0) + 1) * P + (i % TS) + 1, h = hg[q], Y = Math.trunc(h);
+      const dx = (hg[q + 1] - hg[q - 1]) * e, dz = (hg[q + P] - hg[q - P]) * e;
+      let f = (0.5 * dx + 0.5 * dz + 0.70711) / Math.sqrt(dx * dx + dz * dz + 1) / 0.70711; // light from the north-west
+      f = f < 0.3 ? 0.3 : f > 1.35 ? 1.35 : f;
+      if (Y < 62) { // standing water above the ground
+        const w = Math.min(63, 62 - Y) * 3;
+        if (mode === "height") { r = WLUT[w]; g = WLUT[w + 1]; bl = WLUT[w + 2]; }
+        else { r = r * 0.25 + WLUT[w] * 0.75; g = g * 0.25 + WLUT[w + 1] * 0.75; bl = bl * 0.25 + WLUT[w + 2] * 0.75; }
+        f = 1;
+      } else if (mode === "height") { const k = Math.min(255, Y) * 3; r = HLUT[k]; g = HLUT[k + 1]; bl = HLUT[k + 2]; }
+      if (cont && Y >= 62) {
+        const c0 = Math.floor(h / CI), cE = Math.floor(hg[q + 1] / CI), cS = Math.floor(hg[q + P] / CI);
+        if (c0 !== cE || c0 !== cS) f *= (Math.max(c0, cE, cS) * CI) % (CI * 4) === 0 ? 0.5 : 0.7;
+      }
+      r *= f; g *= f; bl *= f;
+    }
+    if (hl && !S.sel.has(b)) { const l = (r*0.3 + g*0.59 + bl*0.11); r = l*0.35 + 20; g = l*0.35 + 22; bl = l*0.35 + 26; }
+    d[i*4] = r; d[i*4+1] = g; d[i*4+2] = bl; d[i*4+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  t.ready = ready; t.painted = true;
+}
+function repaintAll() { for (const t of tiles.values()) t.painted = false; requestDraw(); }
+
+// ---- view / drawing ----
+const cv = $("map"), ctx = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1, drawQueued = false;
+function resize() {
+  const r = cv.getBoundingClientRect(); DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); requestDraw();
+}
+function requestDraw() { if (!drawQueued) { drawQueued = true; requestAnimationFrame(frame); } }
+const toScreen = (x, z) => [W / 2 + (x - S.cx) * S.scale, H / 2 + (z - S.cz) * S.scale];
+const toWorld = (sx, sy) => [S.cx + (sx - W / 2) / S.scale, S.cz + (sy - H / 2) / S.scale];
+
+function visibleTiles(bpp) {
+  const span = TS * bpp, [x0, z0] = toWorld(0, 0), [x1, z1] = toWorld(W, H);
+  const out = [];
+  for (let tz = Math.floor(z0 / span); tz <= Math.floor(z1 / span); tz++)
+    for (let tx = Math.floor(x0 / span); tx <= Math.floor(x1 / span); tx++) out.push([tx, tz]);
+  return out;
+}
+function frame() {
+  drawQueued = false;
+  if (!S.world) return;
+  const bpp = levelFor(S.scale), span = TS * bpp, vis = visibleTiles(bpp);
+  // compute: nearest-to-center first, within a frame budget
+  const [cxw, czw] = [S.cx / span, S.cz / span];
+  vis.sort((a, b) => Math.hypot(a[0] + .5 - cxw, a[1] + .5 - czw) - Math.hypot(b[0] + .5 - cxw, b[1] + .5 - czw));
+  const t0 = performance.now(); let pending = false;
+  for (const [tx, tz] of vis) {
+    const k = tileKey(bpp, tx, tz); let t = tiles.get(k);
+    if (!t) { t = { bpp, tx, tz, bio: new Uint8Array(TS*TS), riv: new Uint8Array(TS*TS), rows: 0, hgt: null, hrows: 0, ready: 0, canvas: null, painted: false }; tiles.set(k, t); }
+    if (!tileDone(t)) { const left = 14 - (performance.now() - t0); if (left > 0) computeRows(t, left); if (!tileDone(t)) pending = true; }
+  }
+  // evict far tiles
+  if (tiles.size > 600) { for (const [k, t] of tiles) { if (t.bpp !== bpp) tiles.delete(k); if (tiles.size < 400) break; } }
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--map-void").trim() || "#1b2330";
+  ctx.fillRect(0, 0, W, H);
+  ctx.imageSmoothingEnabled = false;
+  const px = span * S.scale;
+  for (const [tx, tz] of vis) {
+    const t = tiles.get(tileKey(bpp, tx, tz));
+    const [sx, sy] = toScreen(tx * span, tz * span);
+    if (t && !t.painted) paintTile(t);
+    if (!t || t.ready < TS) { // fall back to a coarser cached tile
+      for (let pb = bpp * 2; pb <= bpp * 16; pb *= 2) {
+        const ps = TS * pb, ptx = Math.floor(tx * span / ps), ptz = Math.floor(tz * span / ps), pt = tiles.get(tileKey(pb, ptx, ptz));
+        if (pt && !pt.painted) paintTile(pt);
+        if (pt && pt.ready === TS) {
+          const f = TS * bpp / pb, ox = (tx * span - ptx * ps) / pb, oz = (tz * span - ptz * ps) / pb;
+          ctx.drawImage(pt.canvas, ox, oz, f, f, sx, sy, px + 0.5, px + 0.5); break;
+        }
+      }
+    }
+    if (t && t.ready > 0) {
+      const h = t.ready / TS;
+      ctx.drawImage(t.canvas, 0, 0, TS, t.ready, sx, sy, px + 0.5, px * h + 0.5);
+    }
+  }
+  drawOverlay();
+  $("h-note").hidden = S.layer === "biomes" || bpp <= HMAX;
+  $("busy").hidden = !pending;
+  if (pending) requestDraw();
+}
+function niceStep(minPx) {
+  const steps = [16, 32, 64, 128, 256, 512, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 250000, 500000];
+  for (const s of steps) if (s * S.scale >= minPx) return s; return steps[steps.length - 1];
+}
+function drawOverlay() {
+  const css = getComputedStyle(document.documentElement);
+  if (S.grid) {
+    const step = niceStep(90), [x0, z0] = toWorld(0, 0), [x1, z1] = toWorld(W, H);
+    ctx.lineWidth = 1; ctx.strokeStyle = "rgba(10,14,20,0.28)"; ctx.beginPath();
+    for (let x = Math.ceil(x0 / step) * step; x <= x1; x += step) { const s = Math.round(toScreen(x, 0)[0]) + .5; ctx.moveTo(s, 0); ctx.lineTo(s, H); }
+    for (let z = Math.ceil(z0 / step) * step; z <= z1; z += step) { const s = Math.round(toScreen(0, z)[1]) + .5; ctx.moveTo(0, s); ctx.lineTo(W, s); }
+    ctx.stroke();
+    ctx.font = "500 11px 'Chakra Petch', system-ui, sans-serif"; ctx.fillStyle = "rgba(10,14,20,0.75)";
+    ctx.textBaseline = "top";
+    for (let x = Math.ceil(x0 / step) * step; x <= x1; x += step) ctx.fillText(fmtN(x), toScreen(x, 0)[0] + 4, 4);
+    ctx.textBaseline = "bottom";
+    for (let z = Math.ceil(z0 / step) * step; z <= z1; z += step) if (z !== 0 || true) ctx.fillText(fmtN(z), 4, toScreen(0, z)[1] - 3);
+  }
+  // spawn origin
+  const [ox, oy] = toScreen(0, 0);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ox, oy, 7, 0, 7); ctx.stroke();
+  ctx.strokeStyle = "#111"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(ox, oy, 7, 0, 7); ctx.moveTo(ox - 12, oy); ctx.lineTo(ox + 12, oy); ctx.moveTo(ox, oy - 12); ctx.lineTo(ox, oy + 12); ctx.stroke();
+  if (S.pin) {
+    const [px, py] = toScreen(S.pin[0], S.pin[1]);
+    ctx.fillStyle = css.getPropertyValue("--accent").trim(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - 7, py - 16); ctx.arc(px, py - 18, 7, Math.PI * 0.8, Math.PI * 0.2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+}
+const fmtN = n => (n < 0 ? "−" : "") + Math.abs(Math.round(n)).toLocaleString("en-US");
+
+// ---- readout ----
+function describe(x, z) {
+  x = Math.floor(x); z = Math.floor(z);
+  const b = REG.list[S.world.biomeAt(x, z)], riv = S.world.isRiver(x, z);
+  $("ro-xz").textContent = `X ${fmtN(x)}  Z ${fmtN(z)}`;
+  $("ro-sw").style.background = riv ? RIVER_COLORS[b.river] : COLORS[b.key];
+  $("ro-name").textContent = riv ? b.river : b.name;
+  $("ro-sub").textContent = riv ? `through ${b.name}` : (b.f3 !== b.name ? `F3 shows “${b.f3}”` : "") + (b.mod !== "RWG" ? (b.f3 !== b.name ? ", " : "") + b.mod : "");
+  $("ro-dist").textContent = `${fmtN(Math.hypot(x, z))} blocks from spawn`;
+  const Y = groundY(x, z);
+  $("ro-y").textContent = Y < 62 ? `Water ${62 - Y} deep, floor at Y ${Y}` : `Ground at Y ${Y}, ${Y - 62} above sea level`;
+}
+
+// ---- interaction ----
+const ptrs = new Map(); let pinch = null, dragMoved = 0;
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.offsetX, e.offsetY]); dragMoved = 0;
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a[0]-b[0], a[1]-b[1]), s: S.scale, c: toWorld((a[0]+b[0])/2, (a[1]+b[1])/2) }; } });
+cv.addEventListener("pointermove", e => {
+  const prev = ptrs.get(e.pointerId);
+  if (!prev) { if (e.pointerType === "mouse" && S.world) describe(...toWorld(e.offsetX, e.offsetY)); return; }
+  const cur = [e.offsetX, e.offsetY]; ptrs.set(e.pointerId, cur);
+  if (ptrs.size === 2 && pinch) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+    setScale(pinch.s * d / pinch.d, false);
+    const m = [(a[0]+b[0])/2, (a[1]+b[1])/2]; S.cx = pinch.c[0] - (m[0] - W/2) / S.scale; S.cz = pinch.c[1] - (m[1] - H/2) / S.scale;
+  } else if (ptrs.size === 1) {
+    S.cx -= (cur[0] - prev[0]) / S.scale; S.cz -= (cur[1] - prev[1]) / S.scale; dragMoved += Math.abs(cur[0]-prev[0]) + Math.abs(cur[1]-prev[1]);
+  }
+  requestDraw(); saveHash();
+});
+const endPtr = e => {
+  const had = ptrs.has(e.pointerId); ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
+  if (had && dragMoved < 6 && e.type === "pointerup" && ptrs.size === 0) { const w = toWorld(e.offsetX, e.offsetY); S.pin = [Math.floor(w[0]), Math.floor(w[1])]; describe(...S.pin); requestDraw(); }
+};
+cv.addEventListener("pointerup", endPtr); cv.addEventListener("pointercancel", endPtr);
+cv.addEventListener("wheel", e => { e.preventDefault(); const w = toWorld(e.offsetX, e.offsetY);
+  setScale(S.scale * Math.pow(1.0018, -e.deltaY), false); S.cx = w[0] - (e.offsetX - W/2) / S.scale; S.cz = w[1] - (e.offsetY - H/2) / S.scale; requestDraw(); saveHash(); }, { passive: false });
+function setScale(s, draw = true) { S.scale = Math.min(8, Math.max(1 / 256, s)); $("zoom-lbl").textContent = S.scale >= 1 ? `${+S.scale.toFixed(1)} px/block` : `1 px = ${Math.round(1 / S.scale)} blocks`; if (draw) { requestDraw(); saveHash(); } }
+$("zin").onclick = () => setScale(S.scale * 2);
+$("zout").onclick = () => setScale(S.scale / 2);
+$("home").onclick = () => { S.cx = 0; S.cz = 0; requestDraw(); saveHash(); };
+$("t-rivers").onchange = e => { S.rivers = e.target.checked; repaintAll(); };
+$("t-grid").onchange = e => { S.grid = e.target.checked; requestDraw(); };
+$("t-contours").onchange = e => { S.contours = e.target.checked; store.set("contours", S.contours); repaintAll(); };
+function setLayer(l) {
+  S.layer = l;
+  for (const b of document.querySelectorAll("[data-layer]")) b.setAttribute("aria-checked", b.dataset.layer === l);
+  $("h-legend").hidden = l !== "height"; $("contour-wrap").hidden = l === "biomes";
+  $("t-rivers").parentElement.hidden = l === "height";
+  store.set("layer", l); repaintAll(); saveHash();
+}
+for (const b of document.querySelectorAll("[data-layer]")) b.onclick = () => setLayer(b.dataset.layer);
+(() => { // height legend
+  const lo = 40, hi = 230, pct = y => ((y - lo) / (hi - lo) * 100).toFixed(1) + "%";
+  const W = [...W_STOPS].reverse().map(([dp, c]) => `${c} ${pct(62 - dp)}`), Hs = H_STOPS.map(([y, c]) => `${c} ${pct(y)}`);
+  $("h-ramp").style.background = `linear-gradient(90deg, ${["#1b4373 0%", ...W, ...Hs].join(", ")})`;
+  $("h-ticks").innerHTML = [[62, "sea 62"], [100, "100"], [150, "150"], [200, "200"]].map(([y, t]) => `<span style="left:${pct(y)}">${t}</span>`).join("");
+})();
+cv.addEventListener("keydown", e => { const st = 60 / S.scale;
+  const m = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[e.key];
+  if (m) { S.cx += m[0]; S.cz += m[1]; requestDraw(); saveHash(); e.preventDefault(); }
+  if (e.key === "+" || e.key === "=") setScale(S.scale * 2); if (e.key === "-") setScale(S.scale / 2); });
+
+// ---- seed ----
+function randomSeedBig() { const a = new Uint32Array(2); crypto.getRandomValues(a); return BigInt.asIntN(64, (BigInt(a[0]) << 32n) | BigInt(a[1])); }
+function loadSeed(text, keepView) {
+  let seed = parseSeed(text);
+  if (seed === null) { seed = randomSeedBig(); text = seed.toString(); }
+  S.seedText = text; S.seed = seed; S.world = new RWGWorld(seed);
+  $("seed").value = text;
+  $("seed-num").textContent = text === seed.toString() ? "" : `numeric seed ${seed}`;
+  if (!keepView) { S.cx = 0; S.cz = 0; S.pin = null; }
+  resetTiles(); requestDraw(); saveHash(); store.set("seed", text); spawnSurvey(); describe(S.pin ? S.pin[0] : S.cx, S.pin ? S.pin[1] : S.cz);
+}
+$("seed-form").onsubmit = e => { e.preventDefault(); loadSeed($("seed").value); };
+$("seed-rand").onclick = () => loadSeed("");
+$("copy-link").onclick = async () => { saveHash(true); try { await navigator.clipboard.writeText(location.href); flash("Link copied"); } catch { flash("Copy the address bar to share"); } };
+function flash(msg) { const f = $("flash"); f.textContent = msg; f.hidden = false; clearTimeout(flash.t); flash.t = setTimeout(() => f.hidden = true, 1800); }
+let hashT = 0;
+function saveHash(now) {
+  const fn = () => { try { const p = { seed: S.seedText, x: Math.round(S.cx), z: Math.round(S.cz), zoom: +Math.log2(S.scale).toFixed(2) }; if (S.layer !== "biomes") p.layer = S.layer; history.replaceState(null, "", "#" + new URLSearchParams(p)); } catch {} };
+  clearTimeout(hashT); if (now) fn(); else hashT = setTimeout(fn, 300);
+}
+
+// ---- legend ----
+function buildLegend() {
+  const root = $("legend"); root.innerHTML = "";
+  const q = $("filter").value.trim().toLowerCase();
+  for (const cl of ["snow", "cold", "hot", "wet", "special", "ocean"]) {
+    const ids = REG.list.map((b, i) => i).filter(i => CLIMATE_OF[i] === cl && (!q || (REG.list[i].name + " " + REG.list[i].f3 + " " + REG.list[i].mod).toLowerCase().includes(q)));
+    if (!ids.length) continue;
+    const g = document.createElement("section"); g.className = "lg-group";
+    g.innerHTML = `<h3>${CLIMATE_NAMES[cl]}</h3>`;
+    ids.sort((a, b) => FREQ[b] - FREQ[a]);
+    for (const i of ids) {
+      const b = REG.list[i], btn = document.createElement("button");
+      btn.className = "lg-item"; btn.setAttribute("aria-pressed", S.sel.has(i));
+      btn.innerHTML = `<span class="sw" style="background:${COLORS[b.key]}"></span><span class="nm">${b.name}${b.mod !== "RWG" ? `<small>${b.mod}</small>` : ""}</span><span class="pct">${fmtPct(FREQ[i])}</span>`;
+      btn.title = `F3: ${b.f3} · rivers here are ${b.river}`;
+      btn.onclick = () => { S.sel.has(i) ? S.sel.delete(i) : S.sel.add(i); btn.setAttribute("aria-pressed", S.sel.has(i)); repaintAll(); updateSel(); };
+      g.appendChild(btn);
+    }
+    root.appendChild(g);
+  }
+}
+const fmtPct = p => p >= 1 ? p.toFixed(1) + "%" : p >= 0.1 ? p.toFixed(2) + "%" : p.toFixed(3) + "%";
+$("filter").oninput = buildLegend;
+function updateSel() {
+  const box = $("sel"), n = S.sel.size;
+  box.hidden = n === 0;
+  $("sel-n").textContent = n === 1 ? "1 biome highlighted" : `${n} biomes highlighted`;
+  $("find-out").innerHTML = ""; $("scan-req").textContent = n ? [...S.sel].map(i => REG.list[i].name).join(", ") : "none — highlight biomes in the Biomes tab";
+  $("scan-go").disabled = n === 0 && !$("scan-river").checked;
+}
+$("sel-clear").onclick = () => { S.sel.clear(); buildLegend(); repaintAll(); updateSel(); };
+
+// ---- nearest search (rings around a point, cooperative) ----
+let findJob = 0;
+$("find").onclick = () => {
+  const job = ++findJob, targets = new Set(S.sel), best = new Map(), step = 24, max = 30000;
+  const [ox, oz] = [Math.round(S.cx), Math.round(S.cz)], w = S.world, out = $("find-out");
+  out.innerHTML = `<p class="muted">Searching from the map centre…</p>`;
+  let r = 0;
+  const tick = () => {
+    if (job !== findJob) return;
+    const t0 = performance.now();
+    while (performance.now() - t0 < 12) {
+      const pts = r === 0 ? [[0, 0]] : [];
+      for (let k = -r; k < r; k++) pts.push([k, -r], [r, k], [-k, r], [-r, -k]);
+      for (const [i, j] of pts) {
+        const x = ox + i * step, z = oz + j * step, b = w.biomeAt(x, z);
+        if (targets.has(b)) { const d = Math.hypot(x - ox, z - oz); const cur = best.get(b); if (!cur || d < cur[0]) best.set(b, [d, x, z]); }
+      }
+      r++;
+      const pending = [...targets].filter(b => !best.has(b) || best.get(b)[0] > r * step);
+      if (pending.length === 0 || r * step > max) return render(true);
+    }
+    render(false); requestAnimationFrame(tick);
+  };
+  const render = done => {
+    out.innerHTML = "";
+    for (const b of targets) {
+      const v = best.get(b), row = document.createElement(v ? "button" : "div");
+      row.className = "hit";
+      row.innerHTML = `<span class="sw" style="background:${COLORS[REG.list[b].key]}"></span><span>${REG.list[b].name}</span><span class="pct">${v ? fmtN(v[0]) : done ? "none within 30k" : "…"}</span>`;
+      if (v) row.onclick = () => { S.cx = v[1]; S.cz = v[2]; S.pin = [v[1], v[2]]; if (S.scale < 1/16) setScale(1/8, false); describe(v[1], v[2]); requestDraw(); saveHash(); };
+      out.appendChild(row);
+    }
+    if (done) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Distances in blocks from the map centre. Tap a row to jump there."; out.appendChild(p); }
+  };
+  tick();
+};
+
+// ---- spawn survey ----
+function survey(w, radius, step, wantRiver) {
+  const counts = new Map(); let riverD = Infinity, n = 0;
+  for (const [dx, dz, d] of ringOffsets(radius, step)) {
+    const b = w.biomeAt(dx, dz); counts.set(b, (counts.get(b) || 0) + 1); n++;
+    if (wantRiver && riverD === Infinity && -w.riverStrength(dx, dz) > 0.8) riverD = d;
+  }
+  return { counts, n, riverD };
+}
+const offCache = new Map();
+function ringOffsets(radius, step) {
+  const k = radius + ":" + step; if (offCache.has(k)) return offCache.get(k);
+  const a = []; for (let x = -radius; x <= radius; x += step) for (let z = -radius; z <= radius; z += step) { const d = Math.hypot(x, z); if (d <= radius) a.push([x, z, d]); }
+  a.sort((p, q) => p[2] - q[2]); offCache.set(k, a); return a;
+}
+function spawnSurvey() {
+  const w = S.world, r = 1500, { counts, n } = survey(w, r, 25, false);
+  const sb = REG.list[w.biomeAt(0, 0)];
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  $("spawn-biome").innerHTML = `<span class="sw" style="background:${COLORS[sb.key]}"></span>${sb.name}`;
+  $("spawn-list").innerHTML = top.map(([b, c]) => `<li><span class="sw" style="background:${COLORS[REG.list[b].key]}"></span><span>${REG.list[b].name}</span><span class="pct">${Math.round(c / n * 100) || "<1"}%</span></li>`).join("");
+}
+
+// ---- seed hunt ----
+let scanJob = 0;
+$("scan-river").onchange = updateSel;
+$("scan-rad").oninput = e => $("scan-rad-v").textContent = fmtN(+e.target.value);
+$("scan-go").onclick = () => {
+  if ($("scan-go").dataset.running) { scanJob++; scanStop(); return; }
+  const job = ++scanJob, req = [...S.sel], radius = +$("scan-rad").value, count = +$("scan-n").value, wantRiver = $("scan-river").checked;
+  const step = Math.max(16, Math.min(48, Math.round(radius / 60)));
+  const offs = ringOffsets(radius, step); let done = 0, found = 0; const t0 = performance.now();
+  $("scan-go").dataset.running = "1"; $("scan-go").textContent = "Stop";
+  const list = $("scan-out"); list.innerHTML = "";
+  const tick = () => {
+    if (job !== scanJob) return;
+    const ts = performance.now();
+    while (performance.now() - ts < 30 && done < count) {
+      const seed = randomSeedBig(), w = new RWGWorld(seed); done++;
+      const need = new Map(req.map(b => [b, null])); let riverD = wantRiver ? null : 0, left = need.size + (wantRiver ? 1 : 0);
+      for (const [dx, dz, d] of offs) {
+        const b = w.biomeAt(dx, dz);
+        if (need.has(b) && need.get(b) === null) { need.set(b, d); left--; }
+        if (riverD === null && -w.riverStrength(dx, dz) > 0.8) { riverD = d; left--; }
+        if (left === 0) break;
+      }
+      if (left === 0) {
+        found++;
+        const worst = Math.max(0, riverD || 0, ...need.values());
+        const li = document.createElement("li"); const btn = document.createElement("button"); btn.className = "hit";
+        btn.innerHTML = `<span class="mono">${seed}</span><span class="pct">all within ${fmtN(worst)}</span>`;
+        btn.dataset.worst = worst;
+        btn.onclick = () => { loadSeed(seed.toString()); showTab("map-tab-biomes"); if (innerWidth < 760) toggleSheet(false); };
+        li.appendChild(btn);
+        const items = [...list.children]; const at = items.find(x => +x.firstChild.dataset.worst > worst);
+        list.insertBefore(li, at || null);
+        if (list.children.length > 50) list.lastChild.remove();
+      }
+    }
+    const rate = done / ((performance.now() - t0) / 1000);
+    $("scan-stat").textContent = `${fmtN(done)} of ${fmtN(count)} seeds tested, ${fmtN(found)} match${found === 1 ? "" : "es"} (${Math.round(rate)}/s)`;
+    if (done < count) requestAnimationFrame(tick); else scanStop();
+  };
+  tick();
+};
+function scanStop() { delete $("scan-go").dataset.running; $("scan-go").textContent = "Find seeds"; }
+
+// ---- tabs & sheet ----
+function showTab(id) { for (const b of document.querySelectorAll("[role=tab]")) { const on = b.id === id; b.setAttribute("aria-selected", on); $(b.getAttribute("aria-controls")).hidden = !on; } }
+for (const b of document.querySelectorAll("[role=tab]")) b.onclick = () => showTab(b.id);
+function toggleSheet(open) { document.body.classList.toggle("sheet-open", open ?? !document.body.classList.contains("sheet-open")); setTimeout(resize, 260); }
+$("sheet-handle").onclick = () => toggleSheet();
+
+// ---- boot ----
+window.addEventListener("resize", resize);
+new ResizeObserver(resize).observe(cv);
+buildLegend(); updateSel();
+(() => {
+  let seed = store.get("seed", "GTNH"), x = 0, z = 0, zoom = -3, layer = store.get("layer", "biomes");
+  try { const h = new URLSearchParams(location.hash.slice(1)); if (h.get("seed")) { seed = h.get("seed"); x = +h.get("x") || 0; z = +h.get("z") || 0; zoom = h.has("zoom") ? +h.get("zoom") : zoom; if (h.get("layer")) layer = h.get("layer"); } } catch {}
+  S.contours = !!store.get("contours", false); $("t-contours").checked = S.contours;
+  setLayer(["biomes", "relief", "height"].includes(layer) ? layer : "biomes");
+  S.cx = x; S.cz = z; setScale(Math.pow(2, zoom), false);
+  resize(); loadSeed(seed, true);
+})();
+
+</script>
+</body>
+</html>
